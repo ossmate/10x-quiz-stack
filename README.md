@@ -1,94 +1,73 @@
-# 10x Astro Starter
+# QuizStack
 
-A modern, opinionated starter template for building fast, accessible, and AI-friendly web applications.
+## Table of Contents
+- [Project Description](#project-description)
+- [Tech Stack](#tech-stack)
+- [Getting Started Locally](#getting-started-locally)
+- [Available Scripts](#available-scripts)
+- [Project Scope](#project-scope)
+- [Project Status](#project-status)
+- [License](#license)
+
+## Project Description
+QuizStack is an MVP application designed to help users prepare for job interviews and learn programming theory through interactive quizzes. The app allows users to create, edit, and delete quizzes, take quizzes, and browse both personal and public quiz sets. Additionally, it features AI-powered quiz generation to help create new quizzes based on provided topics or texts.
 
 ## Tech Stack
+- **Frontend:** Astro 5, React 19, TypeScript 5, Tailwind 4, Shadcn/ui
+- **Backend:** Supabase (database, authentication) and AI integration via Openrouter.ai
+- **CI/CD and Hosting:** GitHub Actions for CI/CD and Docker-based deployment on DigitalOcean
 
-- [Astro](https://astro.build/) v5.5.5 - Modern web framework for building fast, content-focused websites
-- [React](https://react.dev/) v19.0.0 - UI library for building interactive components
-- [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) v4.0.17 - Utility-first CSS framework
+## Getting Started Locally
+Follow these steps to set up the project on your local machine:
 
-## Prerequisites
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/ossmate/10x-quiz-stack.git
+   cd 10x-quiz-stack
+   ```
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
-- npm (comes with Node.js)
+2. **Install dependencies:**
+   Ensure you have the correct Node.js version as specified in `.nvmrc`, then install dependencies:
+   ```bash
+   nvm use
+   npm install
+   ```
 
-## Getting Started
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Run the development server:
-
-```bash
-npm run dev
-```
-
-4. Build for production:
-
-```bash
-npm run build
-```
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+   The app should now be running locally. Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
 
 ## Available Scripts
+In the project directory, you can run:
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
+- **`npm run dev`**  
+  Starts the development server.
 
-## Project Structure
+- **`npm run build`**  
+  Builds the project for production.
 
-```md
-.
-├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
-```
+- **`npm run preview`**  
+  Serves the production build locally for preview.
 
-## AI Development Support
+Additional scripts may be available in the `package.json`.
 
-This project is configured with AI development tools to enhance the development experience, providing guidelines for:
+## Project Scope
+QuizStack focuses on offering a simple yet interactive platform for quiz-based interview preparation and programming theory review. Core functionalities include:
 
-- Project structure
-- Coding practices
-- Frontend development
-- Styling with Tailwind
-- Accessibility best practices
-- Astro and React guidelines
+- **Quiz Management:** Create, edit, and delete quizzes.
+- **Quiz Taking:** Launch quizzes, record answers, and display results.
+- **Quiz Browsing:** View and access both personal and public quiz sets.
+- **AI Quiz Generation:** Automatically create quizzes based on user-provided topics.
 
-### Cursor IDE
+**Boundaries:**
+- Does not include progress tracking.
+- Limited support for various question types.
+- No ranking system implemented in the MVP.
 
-The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
-
-### GitHub Copilot
-
-AI instructions for GitHub Copilot are available in `.github/copilot-instructions.md`
-
-### Windsurf
-
-The `.windsurfrules` file contains AI configuration for Windsurf.
-
-## Contributing
-
-Please follow the AI guidelines and coding practices defined in the AI configuration files when contributing to this project.
+## Project Status
+This project is currently in its MVP phase. Core features have been developed, and ongoing improvements are being made based on user feedback. Contributions and suggestions are welcome!
 
 ## License
-
-MIT
+This project is licensed under the MIT License.
