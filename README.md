@@ -10,7 +10,7 @@
 - [License](#license)
 
 ## Project Description
-QuizStack is an MVP application designed to help users prepare for job interviews and learn programming theory through interactive quizzes. The app allows users to create, edit, and delete quizzes, take quizzes, and browse both personal and public quiz sets. Additionally, it features AI-powered quiz generation to help create new quizzes based on provided topics or texts.
+QuizStack is an application designed to help users prepare for job interviews and learn programming theory through interactive quizzes. The app allows users to create, edit, and delete quizzes, take quizzes, and browse both personal and public quiz sets. Additionally, it features AI-powered quiz generation to help create new quizzes based on provided topics or texts.
 
 ## Tech Stack
 - **Frontend:** Astro 5, React 19, TypeScript 5, Tailwind 4, Shadcn/ui
@@ -42,13 +42,13 @@ Follow these steps to set up the project on your local machine:
 ## Available Scripts
 In the project directory, you can run:
 
-- **`npm run dev`**  
+- **`npm run dev`**
   Starts the development server.
 
-- **`npm run build`**  
+- **`npm run build`**
   Builds the project for production.
 
-- **`npm run preview`**  
+- **`npm run preview`**
   Serves the production build locally for preview.
 
 Additional scripts may be available in the `package.json`.
