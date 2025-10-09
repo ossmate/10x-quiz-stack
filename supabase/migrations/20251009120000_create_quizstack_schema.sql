@@ -2,145 +2,105 @@
 -- QuizStack Database Schema Migration
 -- ============================================================================
 -- Purpose: Create the complete database schema for QuizStack quiz platform
--- Tables: profiles, quizzes, questions, options, quiz_attempts, quiz_responses
+-- Tables: profiles, quizzes, questions, answers, quiz_attempts, attempt_answers, ai_usage_logs
 -- Features: RLS policies, indexes, enums, triggers, constraints
 -- Author: Database Migration System
 -- Date: 2025-10-09
 -- ============================================================================
 
 -- Create custom enum types for type safety and data integrity
--- These enums ensure consistent values across the application
-
-create type quiz_visibility as enum ('public', 'private');
-create type quiz_status as enum ('active', 'archived', 'deleted');
-create type quiz_source as enum ('manual', 'ai_generated');
-create type question_status as enum ('active', 'deleted');
-create type attempt_status as enum ('in_progress', 'completed', 'abandoned');
+create type quiz_status as enum ('draft', 'private', 'public', 'archived');
 
 -- ============================================================================
 -- PROFILES TABLE
 -- ============================================================================
--- Extends Supabase auth.users with additional user information
--- Links to auth.users via foreign key for user management
-
 create table profiles (
     id uuid references auth.users(id) on delete cascade primary key,
     username text unique not null,
-    display_name text,
-    avatar_url text,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null,
 
-    -- Data integrity constraints
-    constraint username_length check (char_length(username) >= 3 and char_length(username) <= 50),
-    constraint display_name_length check (char_length(display_name) <= 100)
+    constraint username_length check (char_length(username) >= 3 and char_length(username) <= 50)
 );
 
--- Enable row level security for profiles table
 alter table profiles enable row level security;
 
--- RLS Policy: Users can view their own profile
 create policy "Users can view own profile" on profiles
     for select using (auth.uid() = id);
 
--- RLS Policy: Users can update their own profile
 create policy "Users can update own profile" on profiles
     for update using (auth.uid() = id);
 
--- RLS Policy: Users can insert their own profile
 create policy "Users can insert own profile" on profiles
     for insert with check (auth.uid() = id);
 
 -- ============================================================================
 -- QUIZZES TABLE
 -- ============================================================================
--- Core entity for quiz management with visibility, status tracking, and AI metadata
--- Supports both manually created and AI-generated quizzes
-
 create table quizzes (
     id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade not null,
     title text not null,
-    description text,
-    visibility quiz_visibility default 'private' not null,
-    status quiz_status default 'active' not null,
-    source quiz_source default 'manual' not null,
-    ai_model text,
-    ai_prompt text,
-    ai_temperature decimal(3,2),
+    metadata jsonb default '{}'::jsonb not null,
+    status quiz_status default 'draft' not null,
+    parent_quiz_id uuid references quizzes(id) on delete set null,
+    version_number integer default 1 not null,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null,
+    deleted_at timestamptz,
 
-    -- Data integrity constraints
     constraint title_length check (char_length(title) >= 1 and char_length(title) <= 200),
-    constraint description_length check (char_length(description) <= 1000),
-    constraint ai_temperature_range check (ai_temperature >= 0.0 and ai_temperature <= 2.0)
+    constraint version_number_positive check (version_number > 0)
 );
 
--- Enable row level security for quizzes table
 alter table quizzes enable row level security;
 
--- RLS Policy: Users can view their own quizzes
 create policy "Users can view own quizzes" on quizzes
     for select using (auth.uid() = user_id);
 
--- RLS Policy: Authenticated users can view public active quizzes
 create policy "Authenticated users can view public quizzes" on quizzes
     for select using (
-        auth.role() = 'authenticated' 
-        and visibility = 'public' 
-        and status = 'active'
+        auth.role() = 'authenticated'
+        and (status = 'public' or status = 'private')
+        and deleted_at is null
     );
 
--- RLS Policy: Anonymous users can view public active quizzes
 create policy "Anonymous users can view public quizzes" on quizzes
     for select using (
-        auth.role() = 'anon' 
-        and visibility = 'public' 
-        and status = 'active'
+        auth.role() = 'anon'
+        and status = 'public'
+        and deleted_at is null
     );
 
--- RLS Policy: Users can insert their own quizzes
 create policy "Users can insert own quizzes" on quizzes
     for insert with check (auth.uid() = user_id);
 
--- RLS Policy: Users can update their own quizzes
 create policy "Users can update own quizzes" on quizzes
     for update using (auth.uid() = user_id);
 
--- RLS Policy: Users can delete their own quizzes
 create policy "Users can delete own quizzes" on quizzes
     for delete using (auth.uid() = user_id);
 
 -- ============================================================================
 -- QUESTIONS TABLE
 -- ============================================================================
--- Questions belonging to quizzes with position tracking and soft deletion
--- Position field maintains question order within each quiz
-
 create table questions (
     id uuid default gen_random_uuid() primary key,
     quiz_id uuid references quizzes(id) on delete cascade not null,
     content text not null,
-    explanation text,
-    position integer not null,
-    status question_status default 'active' not null,
+    order_index integer not null,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null,
+    deleted_at timestamptz,
 
-    -- Data integrity constraints
     constraint content_length check (char_length(content) >= 1 and char_length(content) <= 1000),
-    constraint explanation_length check (char_length(explanation) <= 2000),
-    constraint position_positive check (position > 0),
-    
-    -- Each quiz can have only one question at each position
-    unique(quiz_id, position)
+    constraint order_index_positive check (order_index >= 0),
+
+    unique(quiz_id, order_index)
 );
 
--- Enable row level security for questions table
 alter table questions enable row level security;
 
--- RLS Policy: Users can view questions from their own quizzes
 create policy "Users can view questions from own quizzes" on questions
     for select using (
         exists (
@@ -149,31 +109,28 @@ create policy "Users can view questions from own quizzes" on questions
         )
     );
 
--- RLS Policy: Authenticated users can view questions from public active quizzes
 create policy "Authenticated users can view questions from public quizzes" on questions
     for select using (
         auth.role() = 'authenticated' and
         exists (
             select 1 from quizzes q
-            where q.id = quiz_id 
-            and q.visibility = 'public' 
-            and q.status = 'active'
+            where q.id = quiz_id
+            and (q.status = 'public' or q.status = 'private')
+            and q.deleted_at is null
         )
     );
 
--- RLS Policy: Anonymous users can view questions from public active quizzes
 create policy "Anonymous users can view questions from public quizzes" on questions
     for select using (
         auth.role() = 'anon' and
         exists (
             select 1 from quizzes q
-            where q.id = quiz_id 
-            and q.visibility = 'public' 
-            and q.status = 'active'
+            where q.id = quiz_id
+            and q.status = 'public'
+            and q.deleted_at is null
         )
     );
 
--- RLS Policy: Users can insert questions into their own quizzes
 create policy "Users can insert questions into own quizzes" on questions
     for insert with check (
         exists (
@@ -182,7 +139,6 @@ create policy "Users can insert questions into own quizzes" on questions
         )
     );
 
--- RLS Policy: Users can update questions in their own quizzes
 create policy "Users can update questions in own quizzes" on questions
     for update using (
         exists (
@@ -191,7 +147,6 @@ create policy "Users can update questions in own quizzes" on questions
         )
     );
 
--- RLS Policy: Users can delete questions from their own quizzes
 create policy "Users can delete questions from own quizzes" on questions
     for delete using (
         exists (
@@ -201,32 +156,29 @@ create policy "Users can delete questions from own quizzes" on questions
     );
 
 -- ============================================================================
--- OPTIONS TABLE
+-- ANSWERS TABLE
 -- ============================================================================
--- Answer options for questions with correctness tracking and position ordering
--- Supports both single-answer and multiple-answer questions via is_correct flag
-
-create table options (
+create table answers (
     id uuid default gen_random_uuid() primary key,
     question_id uuid references questions(id) on delete cascade not null,
     content text not null,
     is_correct boolean default false not null,
-    position integer not null,
+    order_index integer not null,
+    generated_by_ai boolean default false not null,
+    ai_generation_metadata jsonb,
     created_at timestamptz default now() not null,
+    updated_at timestamptz default now() not null,
+    deleted_at timestamptz,
 
-    -- Data integrity constraints
     constraint content_length check (char_length(content) >= 1 and char_length(content) <= 500),
-    constraint position_positive check (position > 0),
-    
-    -- Each question can have only one option at each position
-    unique(question_id, position)
+    constraint order_index_positive check (order_index >= 0),
+
+    unique(question_id, order_index)
 );
 
--- Enable row level security for options table
-alter table options enable row level security;
+alter table answers enable row level security;
 
--- RLS Policy: Users can view options from questions in their own quizzes
-create policy "Users can view options from own questions" on options
+create policy "Users can view answers from own questions" on answers
     for select using (
         exists (
             select 1 from questions q
@@ -235,34 +187,31 @@ create policy "Users can view options from own questions" on options
         )
     );
 
--- RLS Policy: Authenticated users can view options from public active quizzes
-create policy "Authenticated users can view options from public questions" on options
+create policy "Authenticated users can view answers from public questions" on answers
     for select using (
         auth.role() = 'authenticated' and
         exists (
             select 1 from questions q
             join quizzes qz on qz.id = q.quiz_id
             where q.id = question_id
-            and qz.visibility = 'public' 
-            and qz.status = 'active'
+            and (qz.status = 'public' or qz.status = 'private')
+            and qz.deleted_at is null
         )
     );
 
--- RLS Policy: Anonymous users can view options from public active quizzes
-create policy "Anonymous users can view options from public questions" on options
+create policy "Anonymous users can view answers from public questions" on answers
     for select using (
         auth.role() = 'anon' and
         exists (
             select 1 from questions q
             join quizzes qz on qz.id = q.quiz_id
             where q.id = question_id
-            and qz.visibility = 'public' 
-            and qz.status = 'active'
+            and qz.status = 'public'
+            and qz.deleted_at is null
         )
     );
 
--- RLS Policy: Users can insert options into questions in their own quizzes
-create policy "Users can insert options into own questions" on options
+create policy "Users can insert answers into own questions" on answers
     for insert with check (
         exists (
             select 1 from questions q
@@ -271,8 +220,7 @@ create policy "Users can insert options into own questions" on options
         )
     );
 
--- RLS Policy: Users can update options in questions in their own quizzes
-create policy "Users can update options in own questions" on options
+create policy "Users can update answers in own questions" on answers
     for update using (
         exists (
             select 1 from questions q
@@ -281,8 +229,7 @@ create policy "Users can update options in own questions" on options
         )
     );
 
--- RLS Policy: Users can delete options from questions in their own quizzes
-create policy "Users can delete options from own questions" on options
+create policy "Users can delete answers from own questions" on answers
     for delete using (
         exists (
             select 1 from questions q
@@ -294,136 +241,134 @@ create policy "Users can delete options from own questions" on options
 -- ============================================================================
 -- QUIZ_ATTEMPTS TABLE
 -- ============================================================================
--- Records of users taking quizzes with scoring and completion tracking
--- Tracks both in-progress and completed quiz sessions
-
 create table quiz_attempts (
     id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade not null,
     quiz_id uuid references quizzes(id) on delete cascade not null,
-    status attempt_status default 'in_progress' not null,
-    score integer,
-    total_questions integer,
-    started_at timestamptz default now() not null,
-    completed_at timestamptz,
+    score integer not null,
+    total_questions integer not null,
+    time_spent integer,
+    created_at timestamptz default now() not null,
+    completed_at timestamptz default now() not null,
 
-    -- Data integrity constraints
     constraint score_range check (score >= 0 and score <= total_questions),
     constraint total_questions_positive check (total_questions > 0),
-    constraint completed_at_after_started check (completed_at is null or completed_at >= started_at)
+    constraint time_spent_positive check (time_spent is null or time_spent >= 0)
 );
 
--- Enable row level security for quiz_attempts table
 alter table quiz_attempts enable row level security;
 
--- RLS Policy: Users can view their own quiz attempts
 create policy "Users can view own quiz attempts" on quiz_attempts
     for select using (auth.uid() = user_id);
 
--- RLS Policy: Users can insert their own quiz attempts
 create policy "Users can insert own quiz attempts" on quiz_attempts
     for insert with check (auth.uid() = user_id);
 
--- RLS Policy: Users can update their own quiz attempts
 create policy "Users can update own quiz attempts" on quiz_attempts
     for update using (auth.uid() = user_id);
 
 -- ============================================================================
--- QUIZ_RESPONSES TABLE
+-- ATTEMPT_ANSWERS TABLE
 -- ============================================================================
--- Individual question responses within quiz attempts
--- Uses UUID array to support multiple-choice questions with multiple correct answers
-
-create table quiz_responses (
+create table attempt_answers (
     id uuid default gen_random_uuid() primary key,
-    attempt_id uuid references quiz_attempts(id) on delete cascade not null,
+    quiz_attempt_id uuid references quiz_attempts(id) on delete cascade not null,
     question_id uuid references questions(id) on delete cascade not null,
-    selected_options uuid[] not null default '{}',
-    is_correct boolean,
-    answered_at timestamptz default now() not null,
+    selected_answer_id uuid references answers(id) on delete cascade not null,
+    created_at timestamptz default now() not null,
 
-    -- Data integrity constraints
-    constraint selected_options_not_empty check (array_length(selected_options, 1) > 0),
-    
-    -- Each attempt can have only one response per question
-    unique(attempt_id, question_id)
+    unique(quiz_attempt_id, question_id)
 );
 
--- Enable row level security for quiz_responses table
-alter table quiz_responses enable row level security;
+alter table attempt_answers enable row level security;
 
--- RLS Policy: Users can view responses from their own quiz attempts
-create policy "Users can view own quiz responses" on quiz_responses
+create policy "Users can view own attempt answers" on attempt_answers
     for select using (
         exists (
             select 1 from quiz_attempts qa
-            where qa.id = attempt_id and qa.user_id = auth.uid()
+            where qa.id = quiz_attempt_id and qa.user_id = auth.uid()
         )
     );
 
--- RLS Policy: Users can insert responses into their own quiz attempts
-create policy "Users can insert own quiz responses" on quiz_responses
+create policy "Users can insert own attempt answers" on attempt_answers
     for insert with check (
         exists (
             select 1 from quiz_attempts qa
-            where qa.id = attempt_id and qa.user_id = auth.uid()
+            where qa.id = quiz_attempt_id and qa.user_id = auth.uid()
         )
     );
 
--- RLS Policy: Users can update responses in their own quiz attempts
-create policy "Users can update own quiz responses" on quiz_responses
+create policy "Users can update own attempt answers" on attempt_answers
     for update using (
         exists (
             select 1 from quiz_attempts qa
-            where qa.id = attempt_id and qa.user_id = auth.uid()
+            where qa.id = quiz_attempt_id and qa.user_id = auth.uid()
         )
     );
 
--- RLS Policy: Users can delete responses from their own quiz attempts
-create policy "Users can delete own quiz responses" on quiz_responses
+create policy "Users can delete own attempt answers" on attempt_answers
     for delete using (
         exists (
             select 1 from quiz_attempts qa
-            where qa.id = attempt_id and qa.user_id = auth.uid()
+            where qa.id = quiz_attempt_id and qa.user_id = auth.uid()
         )
     );
+
+-- ============================================================================
+-- AI_USAGE_LOGS TABLE
+-- ============================================================================
+create table ai_usage_logs (
+    id uuid default gen_random_uuid() primary key,
+    user_id uuid references profiles(id) on delete cascade not null,
+    model_used text not null,
+    tokens_used integer not null,
+    requested_at timestamptz default now() not null,
+    created_at timestamptz default now() not null,
+
+    constraint tokens_used_positive check (tokens_used > 0)
+);
+
+alter table ai_usage_logs enable row level security;
+
+create policy "Users can view own ai usage logs" on ai_usage_logs
+    for select using (auth.uid() = user_id);
+
+create policy "Users can insert own ai usage logs" on ai_usage_logs
+    for insert with check (auth.uid() = user_id);
 
 -- ============================================================================
 -- PERFORMANCE INDEXES
 -- ============================================================================
--- Comprehensive index strategy for optimal query performance
--- Includes foreign key, filtering, sorting, and full-text search indexes
-
--- Foreign key indexes for efficient joins between related tables
 create index idx_quizzes_user_id on quizzes(user_id);
+create index idx_quizzes_status on quizzes(status);
+create index idx_quizzes_created_at on quizzes(created_at desc);
+create index idx_quizzes_deleted_at on quizzes(deleted_at) where deleted_at is null;
+
 create index idx_questions_quiz_id on questions(quiz_id);
-create index idx_options_question_id on options(question_id);
+create index idx_questions_quiz_order on questions(quiz_id, order_index);
+create index idx_questions_deleted_at on questions(deleted_at) where deleted_at is null;
+
+create index idx_answers_question_id on answers(question_id);
+create index idx_answers_question_order on answers(question_id, order_index);
+create index idx_answers_deleted_at on answers(deleted_at) where deleted_at is null;
+
 create index idx_quiz_attempts_user_id on quiz_attempts(user_id);
 create index idx_quiz_attempts_quiz_id on quiz_attempts(quiz_id);
-create index idx_quiz_responses_attempt_id on quiz_responses(attempt_id);
-create index idx_quiz_responses_question_id on quiz_responses(question_id);
+create index idx_quiz_attempts_created_at on quiz_attempts(created_at desc);
 
--- Filtering and sorting indexes for common query patterns
-create index idx_quizzes_visibility_status on quizzes(visibility, status);
-create index idx_quizzes_created_at on quizzes(created_at desc);
-create index idx_questions_quiz_position on questions(quiz_id, position);
-create index idx_options_question_position on options(question_id, position);
-create index idx_quiz_attempts_status on quiz_attempts(status);
-create index idx_quiz_attempts_completed_at on quiz_attempts(completed_at desc);
+create index idx_attempt_answers_attempt_id on attempt_answers(quiz_attempt_id);
+create index idx_attempt_answers_question_id on attempt_answers(question_id);
 
--- Full-text search indexes using PostgreSQL's GIN indexes
--- These enable efficient text search across quiz content
+create index idx_ai_usage_logs_user_id on ai_usage_logs(user_id);
+create index idx_ai_usage_logs_requested_at on ai_usage_logs(requested_at desc);
+
+-- Full-text search indexes
 create index idx_quizzes_title_search on quizzes using gin(to_tsvector('english', title));
-create index idx_quizzes_description_search on quizzes using gin(to_tsvector('english', description));
 create index idx_questions_content_search on questions using gin(to_tsvector('english', content));
 
 -- ============================================================================
 -- UPDATE TRIGGERS
 -- ============================================================================
--- Automatic timestamp update triggers for audit trails
--- Ensures updated_at fields are automatically maintained
-
--- Function to update the updated_at timestamp
 create or replace function update_updated_at_column()
 returns trigger as $$
 begin
@@ -432,7 +377,6 @@ begin
 end;
 $$ language plpgsql;
 
--- Apply update triggers to tables with updated_at columns
 create trigger update_profiles_updated_at
     before update on profiles
     for each row
@@ -448,9 +392,11 @@ create trigger update_questions_updated_at
     for each row
     execute function update_updated_at_column();
 
+create trigger update_answers_updated_at
+    before update on answers
+    for each row
+    execute function update_updated_at_column();
+
 -- ============================================================================
 -- MIGRATION COMPLETE
 -- ============================================================================
--- Schema creation completed successfully
--- All tables, indexes, policies, and triggers are now in place
--- The database is ready for QuizStack application deployment

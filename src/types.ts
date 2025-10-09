@@ -169,15 +169,14 @@ export interface QuizResponseCreateDTO {
 // AI Quiz Generation
 export interface AIQuizGenerationDTO {
   prompt: string;
-  ai_model?: string;
-  ai_temperature?: number;
 }
 
 // Command Models
 
 // AI Quiz Generation Command
+// Internal command that includes app-level AI configuration
 export interface GenerateAIQuizCommand {
   prompt: string;
-  ai_model?: string;
-  ai_temperature?: number;
+  ai_model: string;
+  ai_temperature: number;
 }
