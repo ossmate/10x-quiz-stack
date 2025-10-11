@@ -58,9 +58,9 @@ The UI is structured to provide a streamlined, secure, and responsive experience
 
 - **Path:** `/quizzes/ai/generate`
 - **Main Purpose:** Enable users to generate a new quiz based on a prompt using AI.
-- **Key Information:** Input for quiz generation prompt; display of generated quiz preview; option to edit generated quiz before publication.
-- **Key Components:** AI generation form, preview panel, modal confirmation, loading indicators.
-- **Considerations:** Clear instructions for prompt input, error states capture if AI generation fails, secure API interactions.
+- **Key Information:** Input for quiz generation prompt; display of generated quiz preview (not saved to database); comprehensive editing capabilities before final publication.
+- **Key Components:** AI generation form, preview panel with editable quiz content, loading indicators for generation process, save/publish buttons for final creation.
+- **Considerations:** Clear instructions for prompt input, error states capture if AI generation fails, secure API interactions, seamless transition between preview and editing states.
 
 ## 3. User Journey Map
 
@@ -73,7 +73,7 @@ The UI is structured to provide a streamlined, secure, and responsive experience
 4. **Quiz Taking:**
    - Selecting a quiz redirects the user to the quiz taking view, where each question is displayed in an interactive format. The user navigates through questions, and responses are recorded.
 5. **AI Quiz Generation:**
-   - For AI-driven quiz creation, the user inputs a prompt on the AI generation screen. The system provides a generated quiz preview, which the user can further edit before saving.
+   - For AI-driven quiz creation, the user inputs a prompt on the AI generation screen. The system calls the API to generate a quiz preview without saving to the database. The user can review this preview, make comprehensive edits to the title, description, questions, and answer options, and then explicitly save the quiz to the database when satisfied.
 
 ## 4. Layout and Navigation Structure
 
