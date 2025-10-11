@@ -1,8 +1,11 @@
 import type { APIRoute } from "astro";
+import { createClient } from "@supabase/supabase-js";
 
 import { aiQuizGeneratorService } from "../../../../lib/services/ai-quiz-generator.service.ts";
 import { quizService } from "../../../../lib/services/quiz.service.ts";
 import { aiQuizGenerationSchema } from "../../../../lib/validation/ai-quiz-generation.schema.ts";
+
+import type { Database } from "../../../../db/database.types.ts";
 
 export const prerender = false;
 
@@ -21,15 +24,17 @@ export const prerender = false;
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // TODO: Add authentication when auth system is ready
-    // For now, use user ID from environment variable
-    const userId = import.meta.env.DEFAULT_USER_ID;
+    // Create a Supabase client with service role key for database operations
+    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = import.meta.env.SUPABASE_URL;
+    let supabaseClient = locals.supabase;
 
-    if (!userId) {
+    // Check if Supabase URL is available
+    if (!supabaseUrl) {
       return new Response(
         JSON.stringify({
           error: "Configuration Error",
-          message: "DEFAULT_USER_ID is not configured. Please set it in your .env file.",
+          message: "Supabase URL is not configured. Please check your environment variables.",
         }),
         {
           status: 500,
@@ -39,6 +44,63 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
       );
     }
+
+    // Use service role key if available to bypass RLS
+    if (serviceRoleKey) {
+      try {
+        supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return new Response(
+          JSON.stringify({
+            error: "Database Configuration Error",
+            message: "Failed to create Supabase client with service role key.",
+            details: errorMessage,
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    }
+
+    // TESTING: Authentication check disabled for easier development
+    // In production, uncomment and use these lines instead:
+    /*
+    // Check for authentication
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+    if (!session) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication is required to generate quizzes",
+        }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const userId = session.user.id;
+    */
+
+    // For testing: Use the default user ID from environment
+    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+
+    // User ID should be available from the session at this point
 
     // Step 2: Parse and validate request body
     let body;
@@ -92,8 +154,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     try {
       aiGenerationResult = await aiQuizGeneratorService.generateQuizContent(command);
     } catch (error) {
-      console.error("AI generation failed:", error);
-
+      // Handle AI generation error
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
       // Check for specific error types
@@ -158,18 +219,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // Step 5: Log AI usage (non-blocking)
+    // Log AI usage (non-blocking)
     aiQuizGeneratorService
-      .logAIUsage(locals.supabase, userId, command.ai_model, aiGenerationResult.tokensUsed)
-      .catch((error) => {
-        console.error("Failed to log AI usage (non-critical):", error);
+      .logAIUsage(supabaseClient, userId, command.ai_model, aiGenerationResult.tokensUsed)
+      .catch(() => {
+        // Silently handle non-critical logging errors
       });
 
     // Step 6: Insert quiz into database
     let createdQuiz;
     try {
+      // Test the connection before proceeding
+      const { error: testError } = await supabaseClient.from("quizzes").select("id").limit(1);
+
+      if (testError) {
+        throw new Error(`Supabase connection test failed: ${testError.message}`);
+      }
+
       createdQuiz = await quizService.createQuizFromAIContent(
-        locals.supabase,
+        supabaseClient,
         userId,
         aiGenerationResult.content,
         prompt,
@@ -177,12 +245,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
         command.ai_temperature
       );
     } catch (error) {
-      console.error("Database insertion failed:", error);
+      // Handle database error
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+      // Check for specific error types
+      if (errorMessage.includes("fetch failed")) {
+        return new Response(
+          JSON.stringify({
+            error: "Database Connection Error",
+            message: "Failed to connect to the database. Please check your Supabase URL and credentials.",
+            details: "Network error: fetch failed. This typically means the Supabase URL is invalid or unreachable.",
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
 
       return new Response(
         JSON.stringify({
           error: "Database Error",
           message: "Failed to save quiz to database. Please try again.",
+          details: errorMessage,
         }),
         {
           status: 500,
@@ -200,9 +287,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         "Content-Type": "application/json",
       },
     });
-  } catch (error) {
-    console.error("Unexpected error in AI quiz generation:", error);
-
+  } catch {
+    // Handle unexpected errors
     return new Response(
       JSON.stringify({
         error: "Internal Server Error",

@@ -180,3 +180,38 @@ export interface GenerateAIQuizCommand {
   ai_model: string;
   ai_temperature: number;
 }
+
+// View Models
+
+// AI Quiz Generation View State
+export interface GenerationState {
+  status: "idle" | "generating" | "completed" | "error";
+  prompt: string;
+  generatedQuiz: QuizDetailDTO | null;
+  error: string | null;
+  isEditing: boolean;
+}
+
+// Editable Quiz Data for forms
+export interface EditableQuizData extends QuizDetailDTO {
+  isDirty: boolean;
+  validationErrors: {
+    title?: string;
+    description?: string;
+    questions?: Record<
+      string,
+      {
+        content?: string;
+        options?: Record<string, string>;
+      }
+    >;
+    general?: string[];
+  };
+}
+
+// Quiz Generation Request for service layer
+export interface QuizGenerationRequest {
+  prompt: string;
+  onSuccess: (quiz: QuizDetailDTO) => void;
+  onError: (error: string) => void;
+}
