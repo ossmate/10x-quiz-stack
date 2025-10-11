@@ -171,6 +171,31 @@ export interface AIQuizGenerationDTO {
   prompt: string;
 }
 
+// AI Quiz Generation Preview (response model for generate endpoint)
+export interface AIGeneratedQuizPreview {
+  title: string;
+  description: string;
+  visibility: QuizVisibility;
+  source: QuizSource;
+  ai_model: string;
+  ai_prompt: string;
+  ai_temperature: number;
+  questions: AIGeneratedQuestionPreview[];
+}
+
+export interface AIGeneratedQuestionPreview {
+  content: string;
+  explanation?: string;
+  position: number;
+  options: AIGeneratedOptionPreview[];
+}
+
+export interface AIGeneratedOptionPreview {
+  content: string;
+  is_correct: boolean;
+  position: number;
+}
+
 // Command Models
 
 // AI Quiz Generation Command

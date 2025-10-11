@@ -2,8 +2,8 @@ import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 
 import { aiQuizGeneratorService } from "../../../../lib/services/ai-quiz-generator.service.ts";
-import { quizService } from "../../../../lib/services/quiz.service.ts";
 import { aiQuizGenerationSchema } from "../../../../lib/validation/ai-quiz-generation.schema.ts";
+import type { AIGeneratedQuizPreview, QuizVisibility, QuizSource } from "../../../../types.ts";
 
 import type { Database } from "../../../../db/database.types.ts";
 
@@ -11,16 +11,19 @@ export const prerender = false;
 
 /**
  * POST /api/quizzes/ai/generate
- * Generates a new quiz using AI based on a provided prompt
+ * Generates a quiz preview using AI based on a provided prompt
+ *
+ * NOTE: This endpoint returns a PREVIEW of the generated quiz without saving it to the database.
+ * The user can review the generated content and save it separately using POST /api/quizzes.
  *
  * @param prompt - The user's description of the quiz to generate
  *
- * @returns 201 Created - Newly created quiz object
+ * @returns 201 Created - Preview of newly generated quiz (not persisted)
  * @returns 400 Bad Request - Invalid request payload
- * @returns 500 Internal Server Error - AI service or database failure
- *
- * Note: AI model and temperature are configured at the application level
- * Note: Currently uses a hardcoded user ID for development
+ * @returns 401 Unauthorized - Authentication required
+ * @returns 422 Unprocessable Entity - AI generated invalid content
+ * @returns 503 Service Unavailable - AI service error
+ * @returns 500 Internal Server Error - Unexpected error
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -226,62 +229,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
         // Silently handle non-critical logging errors
       });
 
-    // Step 6: Insert quiz into database
-    let createdQuiz;
-    try {
-      // Test the connection before proceeding
-      const { error: testError } = await supabaseClient.from("quizzes").select("id").limit(1);
+    // Step 6: Create a quiz preview from the AI generated content
+    const quizPreview: AIGeneratedQuizPreview = {
+      title: aiGenerationResult.content.title,
+      description: aiGenerationResult.content.description || "",
+      visibility: "private" as QuizVisibility,
+      source: "ai_generated" as QuizSource,
+      ai_model: command.ai_model,
+      ai_prompt: prompt,
+      ai_temperature: command.ai_temperature,
+      questions: aiGenerationResult.content.questions.map((q, qIndex) => ({
+        content: q.content,
+        explanation: q.explanation,
+        position: qIndex + 1,
+        options: q.options.map((opt, optIndex) => ({
+          content: opt.content,
+          is_correct: opt.is_correct,
+          position: optIndex + 1,
+        })),
+      })),
+    };
 
-      if (testError) {
-        throw new Error(`Supabase connection test failed: ${testError.message}`);
-      }
-
-      createdQuiz = await quizService.createQuizFromAIContent(
-        supabaseClient,
-        userId,
-        aiGenerationResult.content,
-        prompt,
-        command.ai_model,
-        command.ai_temperature
-      );
-    } catch (error) {
-      // Handle database error
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-      // Check for specific error types
-      if (errorMessage.includes("fetch failed")) {
-        return new Response(
-          JSON.stringify({
-            error: "Database Connection Error",
-            message: "Failed to connect to the database. Please check your Supabase URL and credentials.",
-            details: "Network error: fetch failed. This typically means the Supabase URL is invalid or unreachable.",
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: "Database Error",
-          message: "Failed to save quiz to database. Please try again.",
-          details: errorMessage,
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Step 7: Return created quiz with 201 status
-    return new Response(JSON.stringify(createdQuiz), {
+    // Step 7: Return quiz preview with 201 status
+    return new Response(JSON.stringify(quizPreview), {
       status: 201,
       headers: {
         "Content-Type": "application/json",
