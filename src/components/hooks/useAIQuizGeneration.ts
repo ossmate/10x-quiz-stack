@@ -85,24 +85,58 @@ export function useAIQuizGeneration() {
 
   /**
    * Handle publishing of a generated quiz
-   * In a real implementation, this would save the quiz to the database
+   * Saves the quiz to the database via API
    */
   const publishQuiz = useCallback(async (quiz: QuizDetailDTO) => {
+    // Validate quiz data before publishing
+    if (!quiz.title?.trim()) {
+      throw new Error("Quiz title is required");
+    }
+
+    if (!quiz.questions || quiz.questions.length === 0) {
+      throw new Error("Quiz must have at least one question");
+    }
+
     try {
-      // In a real implementation, this would call an API to save the quiz
-      console.log("Publishing quiz:", quiz);
+      const response = await fetch("/api/quizzes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: quiz.title,
+          description: quiz.description || "",
+          visibility: quiz.visibility || "private",
+          source: quiz.source || "ai_generated",
+          ai_model: quiz.ai_model,
+          ai_prompt: quiz.ai_prompt,
+          ai_temperature: quiz.ai_temperature,
+          questions: quiz.questions.map((q) => ({
+            content: q.content,
+            explanation: q.explanation,
+            position: q.position,
+            options: q.options.map((opt) => ({
+              content: opt.content,
+              is_correct: opt.is_correct,
+              position: opt.position,
+            })),
+          })),
+        }),
+      });
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to publish the quiz");
+      }
 
-      // For now, just return success and the quiz ID
+      const savedQuiz = await response.json();
       return {
         success: true,
-        quizId: quiz.id || `quiz-${Date.now()}`,
+        quizId: savedQuiz.id,
       };
     } catch (error) {
-      console.error("Error publishing quiz:", error);
-      throw new Error("Failed to publish the quiz");
+      const message = error instanceof Error ? error.message : "Failed to publish the quiz";
+      throw new Error(message);
     }
   }, []);
 

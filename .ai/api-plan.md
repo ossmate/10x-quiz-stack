@@ -107,7 +107,7 @@
   - _Error Codes_: 404 Not Found, 401 Unauthorized
 
 - **POST /api/quizzes**
-  - _Description_: Create a new quiz.
+  - _Description_: Create a new quiz with complete question and option data.
   - _Request Payload_:
     ```json
     {
@@ -117,11 +117,32 @@
       "source": "manual|ai_generated",
       "ai_model": "string (if generated)",
       "ai_prompt": "string (if generated)",
-      "ai_temperature": "number (0.0 to 2.0, if generated)"
+      "ai_temperature": "number (0.0 to 2.0, if generated)",
+      "questions": [
+        {
+          "content": "string (1-1000 characters)",
+          "explanation": "string (max 2000 characters, optional)",
+          "position": "number (positive integer)",
+          "options": [
+            {
+              "content": "string (1-500 characters)",
+              "is_correct": "boolean",
+              "position": "number (positive integer)"
+            }
+          ]
+        }
+      ]
     }
     ```
+  - _Response_: Returns complete `QuizDetailDTO` with all questions and options
   - _Success Codes_: 201 Created
-  - _Error Codes_: 400 Bad Request, 401 Unauthorized
+  - _Error Codes_: 400 Bad Request, 401 Unauthorized, 500 Internal Server Error
+  - _Validation Rules_:
+    - Minimum 1 question required
+    - Maximum 50 questions allowed
+    - Minimum 2 options per question
+    - Maximum 10 options per question
+    - At least one option must be marked as correct per question
 
 - **PUT /api/quizzes/{id}**
   - _Description_: Update an existing quiz. The owner can modify quiz content including title and description.

@@ -160,7 +160,7 @@ const useAIQuizGeneration = () => {
   });
 
   const generateQuiz = async (prompt: string) => {
-    /* API call logic */
+    /* API call logic to POST /api/quizzes/ai/generate */
   };
   const resetGeneration = () => {
     /* Reset state */
@@ -168,10 +168,25 @@ const useAIQuizGeneration = () => {
   const toggleEdit = () => {
     /* Toggle editing mode */
   };
+  const updateGeneratedQuiz = (updatedQuiz: QuizDetailDTO) => {
+    /* Update quiz after editing */
+  };
+  const publishQuiz = async (quiz: QuizDetailDTO) => {
+    /* Save quiz to database via POST /api/quizzes */
+  };
 
-  return { state, generateQuiz, resetGeneration, toggleEdit };
+  return { state, generateQuiz, resetGeneration, toggleEdit, updateGeneratedQuiz, publishQuiz };
 };
 ```
+
+**Implementation Details:**
+
+The `publishQuiz` function handles saving the generated quiz to the database:
+- Validates quiz data (title required, minimum 1 question)
+- Calls `POST /api/quizzes` endpoint with complete quiz structure
+- Maps `QuizDetailDTO` to the API's expected format
+- Returns success status and saved quiz ID
+- Throws error with descriptive message on failure
 
 ### useEditableQuiz Hook
 
@@ -198,9 +213,10 @@ const useEditableQuiz = (initialQuiz: QuizDetailDTO) => {
 
 ## 7. API Integration
 
-### Request Integration
+### Quiz Generation API
 
 - **Endpoint:** `POST /api/quizzes/ai/generate`
+- **Purpose:** Generate quiz preview using AI without saving to database
 - **Request Type:** `AIQuizGenerationDTO`
 - **Request Structure:**
 
@@ -210,7 +226,61 @@ const useEditableQuiz = (initialQuiz: QuizDetailDTO) => {
 }
 ```
 
-### Response Integration
+- **Response Type:** `AIGeneratedQuizPreview`
+- **Response Structure:**
+
+```typescript
+{
+  title: string;
+  description: string;
+  visibility: "public" | "private";
+  source: "ai_generated";
+  ai_model: string;
+  ai_prompt: string;
+  ai_temperature: number;
+  questions: AIGeneratedQuestionPreview[];
+}
+```
+
+- **Error Codes:**
+  - 400 Bad Request: Invalid prompt format
+  - 401 Unauthorized: Authentication required
+  - 422 Unprocessable Entity: AI generated invalid content
+  - 503 Service Unavailable: AI service error
+  - 500 Internal Server Error: Unexpected failure
+
+### Quiz Publishing API
+
+- **Endpoint:** `POST /api/quizzes`
+- **Purpose:** Save complete quiz with questions and options to database
+- **Request Type:** `QuizCreateInput`
+- **Request Structure:**
+
+```typescript
+{
+  title: string;
+  description?: string;
+  visibility: "public" | "private";
+  source: "manual" | "ai_generated";
+  ai_model?: string;
+  ai_prompt?: string;
+  ai_temperature?: number;
+  questions: [
+    {
+      content: string;
+      explanation?: string;
+      position: number;
+      options: [
+        {
+          content: string;
+          is_correct: boolean;
+          position: number;
+        }
+      ];
+    }
+  ];
+}
+```
 
 - **Response Type:** `QuizDetailDTO`
 - **Response Structure:**
@@ -218,6 +288,7 @@ const useEditableQuiz = (initialQuiz: QuizDetailDTO) => {
 ```typescript
 {
   id: string;
+  user_id: string;
   title: string;
   description: string;
   questions: QuestionWithOptionsDTO[];
@@ -225,11 +296,10 @@ const useEditableQuiz = (initialQuiz: QuizDetailDTO) => {
 }
 ```
 
-### Error Handling
-
-- 400 Bad Request: Invalid prompt format
-- 401 Unauthorized: Authentication required
-- 500 Internal Server Error: AI service failure
+- **Error Codes:**
+  - 400 Bad Request: Validation errors
+  - 401 Unauthorized: Authentication required
+  - 500 Internal Server Error: Database error
 
 ## 8. User Interactions
 
