@@ -1,4 +1,4 @@
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww-- ============================================================================
+-- ============================================================================
 -- Atomic Quiz Creation Function
 -- ============================================================================
 -- Purpose: Create complete quiz with questions and options in a single transaction
