@@ -331,11 +331,7 @@ export class QuizService {
    * @returns QuizDetailDTO if found and user has access, null otherwise
    * @throws Error if database operations fail
    */
-  async getQuizById(
-    supabase: SupabaseClientType,
-    quizId: string,
-    userId: string
-  ): Promise<QuizDetailDTO | null> {
+  async getQuizById(supabase: SupabaseClientType, quizId: string, userId: string): Promise<QuizDetailDTO | null> {
     // Query quiz with nested questions and answers
     const { data: quiz, error: quizError } = await supabase
       .from("quizzes")
@@ -373,11 +369,11 @@ export class QuizService {
     };
 
     // Transform questions with options
-    const questions = (quiz.questions as any[] || [])
+    const questions = ((quiz.questions as any[]) || [])
       .filter((q: any) => q.deleted_at === null)
       .map((question: any) => {
         // Transform options for this question
-        const options = (question.answers as any[] || [])
+        const options = ((question.answers as any[]) || [])
           .filter((a: any) => a.deleted_at === null)
           .map((answer: any) => ({
             id: answer.id,
@@ -390,10 +386,7 @@ export class QuizService {
           .sort((a: any, b: any) => a.position - b.position);
 
         // Extract explanation from AI metadata if available
-        const explanation =
-          question.ai_generation_metadata?.explanation ||
-          metadata.ai_prompt ||
-          undefined;
+        const explanation = question.ai_generation_metadata?.explanation || metadata.ai_prompt || undefined;
 
         return {
           id: question.id,
@@ -437,11 +430,7 @@ export class QuizService {
    * @returns QuizListResponse with quizzes and pagination metadata
    * @throws Error if database operations fail
    */
-  async getQuizzes(
-    supabase: SupabaseClientType,
-    userId: string,
-    query: QuizListQuery
-  ): Promise<QuizListResponse> {
+  async getQuizzes(supabase: SupabaseClientType, userId: string, query: QuizListQuery): Promise<QuizListResponse> {
     const { page, limit, sort, order, visibility } = query;
 
     // Build base query filter for access control
@@ -624,10 +613,7 @@ export class QuizService {
 
     try {
       // Step 2: Delete old questions and answers (cascade should handle answers)
-      const { error: deleteError } = await supabase
-        .from("questions")
-        .delete()
-        .eq("quiz_id", quizId);
+      const { error: deleteError } = await supabase.from("questions").delete().eq("quiz_id", quizId);
 
       if (deleteError) {
         throw new Error(`Failed to delete old questions: ${deleteError.message}`);
