@@ -69,12 +69,13 @@ export const GET: APIRoute = async ({ url, locals }) => {
     }
 
     // Step 2: Parse and validate query parameters
+    // Note: Convert null to undefined for optional fields
     const queryParams = {
       page: url.searchParams.get("page"),
       limit: url.searchParams.get("limit"),
       sort: url.searchParams.get("sort"),
       order: url.searchParams.get("order"),
-      visibility: url.searchParams.get("visibility"),
+      visibility: url.searchParams.get("visibility") || undefined,
     };
 
     const validationResult = quizListQuerySchema.safeParse(queryParams);
@@ -83,13 +84,22 @@ export const GET: APIRoute = async ({ url, locals }) => {
       const errors = validationResult.error.errors.map((err) => ({
         field: err.path.join("."),
         message: err.message,
+        received: err.input,
       }));
+
+      // Log validation errors for debugging
+      // eslint-disable-next-line no-console
+      console.error("Query validation failed:", {
+        queryParams,
+        errors,
+      });
 
       return new Response(
         JSON.stringify({
           error: "Validation Failed",
           message: "Invalid query parameters",
           details: errors,
+          received: queryParams,
         }),
         {
           status: 400,

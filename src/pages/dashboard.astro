@@ -1,0 +1,14 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { DashboardContainer } from "../components/Dashboard/DashboardContainer.tsx";
+
+// Set prerender to false as this page requires authentication
+export const prerender = false;
+
+// Note: Authentication will be handled by middleware
+// If user is not authenticated, they will be redirected to /login
+---
+
+<Layout title="Dashboard | QuizStack">
+  <DashboardContainer client:load />
+</Layout>
