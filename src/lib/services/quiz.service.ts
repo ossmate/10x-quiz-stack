@@ -3,8 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AIGeneratedQuizContent } from "./ai-quiz-generator.service.ts";
 
 import type { Database } from "../../db/database.types.ts";
-import type { QuizDTO, QuizMetadata, QuizDetailDTO } from "../../types.ts";
+import type { QuizDTO, QuizMetadata, QuizDetailDTO, QuizListResponse } from "../../types.ts";
 import type { QuizCreateInput } from "../validation/quiz-create.schema.ts";
+import type { QuizListQuery } from "../validation/quiz-list-query.schema.ts";
 
 type SupabaseClientType = SupabaseClient<Database>;
 
@@ -317,6 +318,469 @@ export class QuizService {
 
       // Re-throw original error
       throw error;
+    }
+  }
+
+  /**
+   * Get quiz by ID with permission check
+   * Returns quiz with nested questions and options if user has access
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to retrieve
+   * @param userId - ID of the user requesting the quiz
+   * @returns QuizDetailDTO if found and user has access, null otherwise
+   * @throws Error if database operations fail
+   */
+  async getQuizById(
+    supabase: SupabaseClientType,
+    quizId: string,
+    userId: string
+  ): Promise<QuizDetailDTO | null> {
+    // Query quiz with nested questions and answers
+    const { data: quiz, error: quizError } = await supabase
+      .from("quizzes")
+      .select(
+        `
+        *,
+        questions:questions(
+          *,
+          answers:answers(*)
+        )
+      `
+      )
+      .eq("id", quizId)
+      .is("deleted_at", null)
+      .single();
+
+    if (quizError || !quiz) {
+      // Quiz not found or deleted
+      return null;
+    }
+
+    // Check access permission: user is owner OR quiz is public
+    const hasAccess = quiz.user_id === userId || quiz.status === "public";
+
+    if (!hasAccess) {
+      // User doesn't have permission to access this quiz
+      return null;
+    }
+
+    // Extract metadata
+    const metadata = (quiz.metadata as unknown as QuizMetadata) || {
+      description: "",
+      visibility: "private",
+      source: "manual",
+    };
+
+    // Transform questions with options
+    const questions = (quiz.questions as any[] || [])
+      .filter((q: any) => q.deleted_at === null)
+      .map((question: any) => {
+        // Transform options for this question
+        const options = (question.answers as any[] || [])
+          .filter((a: any) => a.deleted_at === null)
+          .map((answer: any) => ({
+            id: answer.id,
+            question_id: answer.question_id,
+            content: answer.content,
+            is_correct: answer.is_correct,
+            position: answer.order_index + 1, // Convert 0-based to 1-based
+            created_at: answer.created_at,
+          }))
+          .sort((a: any, b: any) => a.position - b.position);
+
+        // Extract explanation from AI metadata if available
+        const explanation =
+          question.ai_generation_metadata?.explanation ||
+          metadata.ai_prompt ||
+          undefined;
+
+        return {
+          id: question.id,
+          quiz_id: question.quiz_id,
+          content: question.content,
+          explanation,
+          position: question.order_index + 1, // Convert 0-based to 1-based
+          status: question.deleted_at === null ? ("active" as const) : ("deleted" as const),
+          created_at: question.created_at,
+          updated_at: question.updated_at,
+          options,
+        };
+      })
+      .sort((a: any, b: any) => a.position - b.position);
+
+    // Build QuizDetailDTO
+    return {
+      id: quiz.id,
+      user_id: quiz.user_id,
+      title: quiz.title,
+      description: metadata.description,
+      visibility: metadata.visibility,
+      status: quiz.status,
+      source: metadata.source,
+      ai_model: metadata.ai_model,
+      ai_prompt: metadata.ai_prompt,
+      ai_temperature: metadata.ai_temperature,
+      created_at: quiz.created_at,
+      updated_at: quiz.updated_at,
+      questions,
+    };
+  }
+
+  /**
+   * Retrieve paginated list of quizzes accessible to user
+   * Returns user's own quizzes (all visibilities) and public quizzes from other users
+   *
+   * @param supabase - Supabase client instance
+   * @param userId - ID of the user requesting quizzes
+   * @param query - Query parameters for pagination, sorting, and filtering
+   * @returns QuizListResponse with quizzes and pagination metadata
+   * @throws Error if database operations fail
+   */
+  async getQuizzes(
+    supabase: SupabaseClientType,
+    userId: string,
+    query: QuizListQuery
+  ): Promise<QuizListResponse> {
+    const { page, limit, sort, order, visibility } = query;
+
+    // Build base query filter for access control
+    // User can see: their own quizzes (all visibilities) OR public quizzes from others
+    let baseFilter = `user_id.eq.${userId}`;
+
+    // If filtering by visibility
+    if (visibility) {
+      if (visibility === "public") {
+        // Show only public quizzes (owned by user OR public from others)
+        baseFilter = `and(status.eq.public,or(user_id.eq.${userId},user_id.neq.${userId}))`;
+      } else {
+        // Show only private quizzes owned by user
+        baseFilter = `and(status.eq.private,user_id.eq.${userId})`;
+      }
+    } else {
+      // No visibility filter: show user's quizzes OR public quizzes from others
+      baseFilter = `or(user_id.eq.${userId},status.eq.public)`;
+    }
+
+    // Count query for total items
+    const { count, error: countError } = await supabase
+      .from("quizzes")
+      .select("*", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .or(baseFilter);
+
+    if (countError) {
+      throw new Error(`Failed to count quizzes: ${countError.message}`);
+    }
+
+    const totalItems = count || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // Data query with pagination
+    const { data: quizzes, error: dataError } = await supabase
+      .from("quizzes")
+      .select("*")
+      .is("deleted_at", null)
+      .or(baseFilter)
+      .order(sort, { ascending: order === "asc" })
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (dataError) {
+      throw new Error(`Failed to fetch quizzes: ${dataError.message}`);
+    }
+
+    // Transform database records to DTOs
+    const quizDTOs: QuizDTO[] = (quizzes || []).map((quiz) => {
+      const metadata = (quiz.metadata as unknown as QuizMetadata) || {
+        description: "",
+        visibility: "private",
+        source: "manual",
+      };
+
+      return this.transformQuizToDTO(quiz, metadata);
+    });
+
+    return {
+      quizzes: quizDTOs,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalItems,
+      },
+    };
+  }
+
+  /**
+   * Update quiz with complete replacement (atomic)
+   * Only the quiz owner can perform this operation
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to update
+   * @param userId - User requesting the update
+   * @param quizData - New quiz data
+   * @returns Updated quiz detail DTO
+   * @throws Error if update fails or user lacks permission
+   */
+  async updateQuiz(
+    supabase: SupabaseClientType,
+    quizId: string,
+    userId: string,
+    quizData: QuizCreateInput
+  ): Promise<QuizDetailDTO> {
+    try {
+      // Try atomic approach first (requires migration for update_quiz_atomic function)
+      return await this.updateQuizAtomic(supabase, quizId, userId, quizData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check if error is due to missing function
+      if (
+        errorMessage.includes("function update_quiz_atomic") ||
+        errorMessage.includes("does not exist") ||
+        errorMessage.includes("schema cache") ||
+        errorMessage.includes("Could not find the function")
+      ) {
+        console.warn("Atomic update function not available, falling back to cleanup approach");
+        return await this.updateQuizWithCleanup(supabase, quizId, userId, quizData);
+      }
+
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  /**
+   * Update quiz atomically using database function
+   * Provides true transactional safety - all or nothing
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to update
+   * @param userId - User requesting the update
+   * @param quizData - New quiz data
+   * @returns Updated quiz detail DTO
+   * @throws Error if update fails
+   */
+  private async updateQuizAtomic(
+    supabase: SupabaseClientType,
+    quizId: string,
+    userId: string,
+    quizData: QuizCreateInput
+  ): Promise<QuizDetailDTO> {
+    // Call the database function for atomic update
+    const { data, error } = await supabase.rpc("update_quiz_atomic", {
+      p_quiz_id: quizId,
+      p_user_id: userId,
+      p_quiz_input: quizData as never,
+    });
+
+    if (error) {
+      throw new Error(`Failed to update quiz atomically: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error("Quiz update succeeded but no data was returned");
+    }
+
+    // The function returns the complete quiz structure
+    return data as QuizDetailDTO;
+  }
+
+  /**
+   * Update quiz with cleanup on failure (fallback approach)
+   * Checks ownership and replaces all quiz data
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to update
+   * @param userId - User requesting the update
+   * @param quizData - New quiz data
+   * @returns Updated quiz detail DTO
+   * @throws Error if update fails or user lacks permission
+   */
+  private async updateQuizWithCleanup(
+    supabase: SupabaseClientType,
+    quizId: string,
+    userId: string,
+    quizData: QuizCreateInput
+  ): Promise<QuizDetailDTO> {
+    // Step 1: Check ownership
+    const { data: existingQuiz, error: fetchError } = await supabase
+      .from("quizzes")
+      .select("id, user_id, deleted_at")
+      .eq("id", quizId)
+      .single();
+
+    if (fetchError || !existingQuiz) {
+      throw new Error("Quiz not found");
+    }
+
+    if (existingQuiz.deleted_at !== null) {
+      throw new Error("Quiz not found");
+    }
+
+    if (existingQuiz.user_id !== userId) {
+      throw new Error("Forbidden");
+    }
+
+    try {
+      // Step 2: Delete old questions and answers (cascade should handle answers)
+      const { error: deleteError } = await supabase
+        .from("questions")
+        .delete()
+        .eq("quiz_id", quizId);
+
+      if (deleteError) {
+        throw new Error(`Failed to delete old questions: ${deleteError.message}`);
+      }
+
+      // Step 3: Update quiz metadata
+      const metadata: QuizMetadata = {
+        description: quizData.description || "",
+        visibility: quizData.visibility,
+        source: quizData.source,
+        ai_model: quizData.ai_model,
+        ai_prompt: quizData.ai_prompt,
+        ai_temperature: quizData.ai_temperature,
+      };
+
+      const { data: updatedQuiz, error: updateError } = await supabase
+        .from("quizzes")
+        .update({
+          title: quizData.title,
+          metadata: metadata as never,
+        })
+        .eq("id", quizId)
+        .select()
+        .single();
+
+      if (updateError || !updatedQuiz) {
+        throw new Error(`Failed to update quiz: ${updateError?.message || "Unknown error"}`);
+      }
+
+      // Step 4: Insert new questions with their options
+      const createdQuestions = [];
+
+      for (const questionData of quizData.questions) {
+        // Insert question
+        const { data: question, error: questionError } = await supabase
+          .from("questions")
+          .insert({
+            quiz_id: quizId,
+            content: questionData.content,
+            order_index: questionData.position - 1,
+          })
+          .select()
+          .single();
+
+        if (questionError || !question) {
+          throw new Error(`Failed to create question: ${questionError?.message || "Unknown error"}`);
+        }
+
+        // Insert options for this question
+        const createdOptions = [];
+
+        for (const optionData of questionData.options) {
+          const { data: option, error: optionError } = await supabase
+            .from("answers")
+            .insert({
+              question_id: question.id,
+              content: optionData.content,
+              is_correct: optionData.is_correct,
+              order_index: optionData.position - 1,
+              generated_by_ai: quizData.source === "ai_generated",
+              ai_generation_metadata:
+                quizData.source === "ai_generated" && questionData.explanation
+                  ? ({ explanation: questionData.explanation } as never)
+                  : null,
+            })
+            .select()
+            .single();
+
+          if (optionError || !option) {
+            throw new Error(`Failed to create option: ${optionError?.message || "Unknown error"}`);
+          }
+
+          createdOptions.push({
+            id: option.id,
+            question_id: option.question_id,
+            content: option.content,
+            is_correct: option.is_correct,
+            position: optionData.position,
+            created_at: option.created_at,
+          });
+        }
+
+        createdQuestions.push({
+          id: question.id,
+          quiz_id: question.quiz_id,
+          content: question.content,
+          explanation: questionData.explanation,
+          position: questionData.position,
+          status: "active" as const,
+          created_at: question.created_at,
+          updated_at: question.updated_at,
+          options: createdOptions,
+        });
+      }
+
+      // Step 5: Return updated quiz with questions
+      return {
+        id: updatedQuiz.id,
+        user_id: updatedQuiz.user_id,
+        title: updatedQuiz.title,
+        description: metadata.description,
+        visibility: metadata.visibility,
+        status: updatedQuiz.status,
+        source: metadata.source,
+        ai_model: metadata.ai_model,
+        ai_prompt: metadata.ai_prompt,
+        ai_temperature: metadata.ai_temperature,
+        created_at: updatedQuiz.created_at,
+        updated_at: updatedQuiz.updated_at,
+        questions: createdQuestions,
+      };
+    } catch (error) {
+      // Log error (data may be in inconsistent state)
+      console.error("Quiz update failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Soft delete a quiz
+   * Only the quiz owner can perform this operation
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to delete
+   * @param userId - User requesting deletion
+   * @throws Error with specific message for different failure scenarios
+   */
+  async deleteQuiz(supabase: SupabaseClientType, quizId: string, userId: string): Promise<void> {
+    // Step 1: Fetch quiz to check existence and ownership
+    const { data: quiz, error: fetchError } = await supabase
+      .from("quizzes")
+      .select("id, user_id, deleted_at")
+      .eq("id", quizId)
+      .single();
+
+    // Step 2: Handle not found or already deleted
+    if (fetchError || !quiz || quiz.deleted_at !== null) {
+      throw new Error("Quiz not found");
+    }
+
+    // Step 3: Check ownership
+    if (quiz.user_id !== userId) {
+      throw new Error("Forbidden");
+    }
+
+    // Step 4: Soft delete by setting deleted_at timestamp
+    const { error: deleteError } = await supabase
+      .from("quizzes")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", quizId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete quiz: ${deleteError.message}`);
     }
   }
 
