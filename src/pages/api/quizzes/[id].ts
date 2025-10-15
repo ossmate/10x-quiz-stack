@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { quizService } from "../../../lib/services/quiz.service.ts";
 import { uuidSchema } from "../../../lib/validation/uuid.schema.ts";
 import { quizCreateSchema } from "../../../lib/validation/quiz-create.schema.ts";
+import { getDefaultUserId } from "../../../lib/utils/auth.ts";
 
 import type { Database } from "../../../db/database.types.ts";
 
@@ -129,7 +130,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
     */
 
     // For testing: Use the default user ID from environment
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     // Step 4: Fetch quiz using the service
     let quiz;
@@ -364,7 +365,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     */
 
     // For testing: Use the default user ID from environment
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     // Step 5: Update quiz using the service
     let updatedQuiz;
@@ -577,7 +578,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     */
 
     // For testing: Use the default user ID from environment
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     // Step 4: Delete quiz using the service
     try {

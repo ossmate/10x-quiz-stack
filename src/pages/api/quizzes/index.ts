@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { quizService } from "../../../lib/services/quiz.service.ts";
 import { quizCreateSchema } from "../../../lib/validation/quiz-create.schema.ts";
 import { quizListQuerySchema } from "../../../lib/validation/quiz-list-query.schema.ts";
+import { getDefaultUserId } from "../../../lib/utils/auth.ts";
 
 import type { Database } from "../../../db/database.types.ts";
 
@@ -134,7 +135,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     */
 
     // For testing: Use the default user ID from environment
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     // Step 3: Fetch quizzes using the service
     let quizListResponse;
@@ -272,7 +273,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     */
 
     // For testing: Use the default user ID from environment
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     // Step 2: Parse and validate request body
     let body;

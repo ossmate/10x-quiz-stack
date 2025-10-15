@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getDefaultUserId } from "../../../lib/utils/auth.ts";
 
 export const prerender = false;
 
@@ -53,7 +54,7 @@ export const GET: APIRoute = async () => {
     */
 
     // For testing: Return user from environment variable
-    const userId = import.meta.env.DEFAULT_USER_ID || "test-user-123";
+    const userId = getDefaultUserId();
 
     return new Response(
       JSON.stringify({
