@@ -1,0 +1,27 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { QuizDetailContainer } from "../../components/quiz-detail/QuizDetailContainer.tsx";
+
+// Set prerender to false as this page requires authentication
+export const prerender = false;
+
+// Extract quiz ID from route parameters
+const { id } = Astro.params;
+
+// Note: Authentication will be handled by middleware
+// If user is not authenticated, they will be redirected to /login
+// The quiz ID will be passed to the React component for validation
+
+// Get current user ID from session (set by middleware)
+const session = Astro.locals.session;
+const currentUserId = session?.userId;
+
+// Ensure quiz ID exists
+if (!id) {
+  return Astro.redirect("/dashboard");
+}
+---
+
+<Layout title="Quiz Details | QuizStack">
+  <QuizDetailContainer client:load quizId={id} currentUserId={currentUserId} />
+</Layout>
