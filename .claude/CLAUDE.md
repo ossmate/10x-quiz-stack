@@ -48,6 +48,7 @@ When modifying the directory structure, always update this section.
 
 For detailed guidelines on specific technologies and patterns, refer to:
 
+- `.claude/docs/code-generation-rules.md` - **REQUIRED**: Code generation standards and linting rules
 - `.claude/docs/astro.md` - Astro-specific guidelines and patterns
 - `.claude/docs/react.md` - React best practices and hooks
 - `.claude/docs/frontend.md` - Frontend styling and accessibility
