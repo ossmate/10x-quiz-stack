@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { navigate } from "astro:transitions/client";
 import type { QuizListResponse } from "../types.ts";
 
 /**
@@ -73,9 +74,9 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
         credentials: "include",
       });
 
-      // Handle authentication errors
+      // Handle authentication errors - use Astro's client-side navigation
       if (response.status === 401) {
-        window.location.href = "/login?redirect=/dashboard";
+        navigate("/login?redirect=/dashboard");
         throw new Error("Unauthorized");
       }
 

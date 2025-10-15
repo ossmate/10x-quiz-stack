@@ -8,7 +8,78 @@ The Dashboard view serves as the main landing page after user authentication, pr
 
 The view implements tabbed navigation for switching between these categories, supports pagination for handling large datasets, and provides a responsive grid layout optimized for various screen sizes. Key features include loading states, error handling, empty states, and accessible navigation patterns.
 
-## 2. View Routing
+## 2. Navigation in Astro
+
+This implementation uses Astro's client-side navigation for smooth page transitions without full page reloads. This provides a better user experience and maintains application state during navigation.
+
+### 2.1 Client-Side Navigation API
+
+**Using navigate() for programmatic navigation:**
+```typescript
+import { navigate } from 'astro:transitions/client';
+
+// Navigate to a different page
+navigate('/quizzes/123');
+
+// Navigate with query parameters
+navigate('/login?redirect=/dashboard');
+```
+
+**Key benefits:**
+- No full page reload
+- Smooth transitions with View Transitions API
+- Maintains React component state where appropriate
+- Better performance than `window.location.href`
+- Supports browser back/forward buttons
+
+### 2.2 Using Links for Better Accessibility
+
+For clickable elements, prefer using native `<a>` tags over `onClick` handlers:
+
+```typescript
+// ✅ Better approach - semantic HTML with accessibility
+<Card asChild>
+  <a href={`/quizzes/${quiz.id}`}>
+    {/* card content */}
+  </a>
+</Card>
+
+// ❌ Avoid this approach
+<Card onClick={() => navigate(`/quizzes/${quiz.id}`)}>
+  {/* card content */}
+</Card>
+```
+
+**Benefits of using `<a>` tags:**
+- Works without JavaScript
+- Supports right-click "Open in new tab"
+- Proper keyboard navigation (Tab key)
+- Screen reader accessibility
+- Browser context menu support
+- SEO-friendly
+
+### 2.3 View Transitions Setup
+
+Ensure your layout includes View Transitions:
+
+```astro
+---
+// src/layouts/Layout.astro
+import { ViewTransitions } from 'astro:transitions';
+---
+<html>
+  <head>
+    <ViewTransitions />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+```
+
+With View Transitions enabled, both `<a>` tags and `navigate()` will automatically use smooth transitions.
+
+## 3. View Routing
 
 **Path**: `/dashboard`
 
@@ -24,7 +95,7 @@ The view implements tabbed navigation for switching between these categories, su
 ---
 ```
 
-## 3. Component Structure
+## 4. Component Structure
 
 ```
 DashboardPage (Astro - src/pages/dashboard.astro)
@@ -43,9 +114,9 @@ DashboardPage (Astro - src/pages/dashboard.astro)
         └── EmptyState (React - src/components/Dashboard/EmptyState.tsx) [conditional]
 ```
 
-## 4. Component Details
+## 5. Component Details
 
-### 4.1 DashboardPage (Astro)
+### 5.1 DashboardPage (Astro)
 
 **Description**: The main Astro page component that serves as the entry point for the Dashboard view. It's a static page that hydrates the React components on the client side.
 
@@ -73,7 +144,7 @@ import DashboardContainer from '@/components/Dashboard/DashboardContainer';
 </DashboardLayout>
 ```
 
-### 4.2 DashboardContainer (React)
+### 5.2 DashboardContainer (React)
 
 **Description**: The main React container component that orchestrates the entire dashboard functionality. It manages the active tab state, coordinates data fetching for both quiz lists, handles errors, and renders appropriate child components based on current state.
 
@@ -107,7 +178,7 @@ import DashboardContainer from '@/components/Dashboard/DashboardContainer';
 - Uses `useDashboard` custom hook to manage all dashboard state
 - Manages active tab, pagination, and data for both lists
 
-### 4.3 PageHeader (React)
+### 5.3 PageHeader (React)
 
 **Description**: Simple presentational component that displays the dashboard title and optional description.
 
@@ -130,7 +201,7 @@ interface PageHeaderProps {
 }
 ```
 
-### 4.4 QuizListTabs (React)
+### 5.4 QuizListTabs (React)
 
 **Description**: Tab navigation component that allows users to switch between "My Quizzes" and "Public Quizzes" views. Uses Shadcn/ui Tabs component for accessibility.
 
@@ -155,7 +226,7 @@ interface QuizListTabsProps {
 }
 ```
 
-### 4.5 QuizList (React)
+### 5.5 QuizList (React)
 
 **Description**: Container component that renders a grid of quiz cards and pagination controls. Handles the layout and organization of quiz items.
 
@@ -188,7 +259,7 @@ interface QuizListProps {
 }
 ```
 
-### 4.6 QuizCard (React)
+### 5.6 QuizCard (React)
 
 **Description**: Individual quiz card component that displays summary information about a single quiz. Clickable to navigate to quiz detail or taking page.
 
@@ -225,7 +296,7 @@ interface QuizCardProps {
 - Determine card styling based on source (AI vs manual)
 - Truncate long descriptions
 
-### 4.7 PaginationControls (React)
+### 5.7 PaginationControls (React)
 
 **Description**: Pagination navigation component that allows users to move between pages of quiz results.
 
@@ -259,7 +330,7 @@ interface PaginationControlsProps {
 }
 ```
 
-### 4.8 LoadingSpinner (React)
+### 5.8 LoadingSpinner (React)
 
 **Description**: Loading state indicator shown while data is being fetched.
 
@@ -282,7 +353,7 @@ interface LoadingSpinnerProps {
 }
 ```
 
-### 4.9 ErrorAlert (React)
+### 5.9 ErrorAlert (React)
 
 **Description**: Error display component that shows user-friendly error messages with optional retry functionality.
 
@@ -312,7 +383,7 @@ interface ErrorAlertProps {
 }
 ```
 
-### 4.10 EmptyState (React)
+### 5.10 EmptyState (React)
 
 **Description**: Empty state component shown when no quizzes are available. Displays contextual message and call-to-action based on the active tab.
 
@@ -344,9 +415,9 @@ interface EmptyStateProps {
 - My Quizzes: "You haven't created any quizzes yet" + "Create your first quiz" button
 - Public Quizzes: "No public quizzes available" + optional "Refresh" button
 
-## 5. Types
+## 6. Types
 
-### 5.1 Existing Types (from src/types.ts)
+### 6.1 Existing Types (from src/types.ts)
 
 **QuizDTO**: Complete quiz information without nested questions
 ```typescript
@@ -379,7 +450,7 @@ interface QuizListResponse {
 }
 ```
 
-### 5.2 New ViewModel Types
+### 6.2 New ViewModel Types
 
 **DashboardViewState**: Overall dashboard state
 ```typescript
@@ -431,7 +502,7 @@ interface PaginationMetadata {
 }
 ```
 
-### 5.3 API Request Types
+### 6.3 API Request Types
 
 **QuizListQuery**: Query parameters for GET /api/quizzes
 ```typescript
@@ -444,13 +515,13 @@ interface QuizListQuery {
 }
 ```
 
-## 6. State Management
+## 7. State Management
 
-### 6.1 Overview
+### 7.1 Overview
 
 State management for the Dashboard view is handled through a custom React hook (`useDashboard`) that encapsulates all state logic and side effects. This approach keeps the main component clean and makes state logic reusable and testable.
 
-### 6.2 Custom Hook: useDashboard
+### 7.2 Custom Hook: useDashboard
 
 **Purpose**: Centralize all dashboard state management, including tab switching, data fetching for both quiz lists, pagination, and error handling.
 
@@ -490,7 +561,7 @@ function useDashboard(): {
 - Maintains separate pagination state for each tab
 - Resets to page 1 when switching tabs (optional behavior)
 
-### 6.3 Custom Hook: useQuizList
+### 7.3 Custom Hook: useQuizList
 
 **Purpose**: Generic hook for fetching and managing a list of quizzes with pagination and error handling.
 
@@ -523,7 +594,7 @@ function useQuizList(params: {
 - 400 Bad Request: Log error, show generic message
 - 500 Server Error: Show user-friendly error message
 
-### 6.4 State Flow
+### 7.4 State Flow
 
 1. **Initial Load**:
    - User navigates to `/dashboard`
@@ -560,7 +631,7 @@ function useQuizList(params: {
    - refetch() called
    - Process repeats from loading state
 
-### 6.5 Data Filtering
+### 7.5 Data Filtering
 
 **Challenge**: The GET /api/quizzes endpoint returns both the user's own quizzes and public quizzes from others. For the "My Quizzes" tab, we need to show only the user's quizzes.
 
@@ -587,9 +658,9 @@ const myQuizzes = useMemo(() => {
 }, [allQuizzesData, currentUserId]);
 ```
 
-## 7. API Integration
+## 8. API Integration
 
-### 7.1 Endpoint Details
+### 8.1 Endpoint Details
 
 **Endpoint**: `GET /api/quizzes`
 
@@ -625,12 +696,14 @@ const myQuizzes = useMemo(() => {
 }
 ```
 
-### 7.2 API Calls for Dashboard
+### 8.2 API Calls for Dashboard
 
 #### Fetch My Quizzes
 
 **Initial Implementation** (with client-side filtering):
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
   const response = await fetch(
     `/api/quizzes?page=${page}&limit=10&sort=created_at&order=desc`,
@@ -645,8 +718,8 @@ const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      // Redirect to login
-      window.location.href = '/login';
+      // Redirect to login using Astro's client-side navigation
+      navigate('/login');
       throw new Error('Unauthorized');
     }
     throw new Error('Failed to fetch quizzes');
@@ -673,6 +746,8 @@ const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
 
 **Recommended Implementation** (with backend support):
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
   // Assuming backend adds 'owned=true' parameter support
   const response = await fetch(
@@ -688,7 +763,7 @@ const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      window.location.href = '/login';
+      navigate('/login');
       throw new Error('Unauthorized');
     }
     throw new Error('Failed to fetch my quizzes');
@@ -701,6 +776,8 @@ const fetchMyQuizzes = async (page: number): Promise<QuizListResponse> => {
 #### Fetch Public Quizzes
 
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const fetchPublicQuizzes = async (page: number): Promise<QuizListResponse> => {
   const response = await fetch(
     `/api/quizzes?visibility=public&page=${page}&limit=10&sort=created_at&order=desc`,
@@ -715,7 +792,7 @@ const fetchPublicQuizzes = async (page: number): Promise<QuizListResponse> => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      window.location.href = '/login';
+      navigate('/login');
       throw new Error('Unauthorized');
     }
     throw new Error('Failed to fetch public quizzes');
@@ -725,7 +802,7 @@ const fetchPublicQuizzes = async (page: number): Promise<QuizListResponse> => {
 };
 ```
 
-### 7.3 Error Response Handling
+### 8.3 Error Response Handling
 
 **401 Unauthorized**:
 ```json
@@ -757,14 +834,14 @@ Action: Log error, show generic error message (shouldn't happen with proper typi
 ```
 Action: Display user-friendly error message with retry option
 
-### 7.4 Loading States
+### 8.4 Loading States
 
 - **Initial Load**: Show full-page LoadingSpinner
 - **Pagination**: Show subtle loading indicator on pagination controls
 - **Tab Switch**: Show LoadingSpinner in new tab content area
 - **Retry**: Show LoadingSpinner, clear error state
 
-### 7.5 Caching Strategy (Optional Enhancement)
+### 8.5 Caching Strategy (Optional Enhancement)
 
 For improved UX, consider implementing:
 - Cache fetched pages for 5 minutes
@@ -772,9 +849,9 @@ For improved UX, consider implementing:
 - Invalidate cache on tab visibility change
 - Use React Query or SWR for automatic caching
 
-## 8. User Interactions
+## 9. User Interactions
 
-### 8.1 Tab Navigation
+### 9.1 Tab Navigation
 
 **Interaction**: User clicks on a tab (My Quizzes or Public Quizzes)
 
@@ -813,7 +890,7 @@ const handleTabChange = (newTab: TabType) => {
 };
 ```
 
-### 8.2 Pagination
+### 9.2 Pagination
 
 **Interaction**: User clicks on page number, next, or previous button
 
@@ -874,6 +951,7 @@ const handlePageChange = (newPage: number) => {
 - Entire card is clickable (not just title)
 - Navigates to `/quizzes/{quizId}` (or appropriate route)
 - Opens in same window (can open in new tab with Ctrl/Cmd+Click)
+- Uses client-side navigation for smooth transitions
 
 **Edge Cases**:
 - Quiz no longer exists: 404 page on detail route
@@ -882,12 +960,22 @@ const handlePageChange = (newPage: number) => {
 
 **Implementation**:
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const handleQuizClick = (quizId: string) => {
-  // Using Astro or React Router navigation
-  window.location.href = `/quizzes/${quizId}`;
-  // Or with React Router:
-  // navigate(`/quizzes/${quizId}`);
+  // Use Astro's client-side navigation for smooth transitions
+  navigate(`/quizzes/${quizId}`);
 };
+```
+
+**Alternative** (recommended for better accessibility):
+```typescript
+// In QuizCard component - use <a> tag instead of onClick
+<Card asChild>
+  <a href={`/quizzes/${quiz.id}`} className="cursor-pointer hover:shadow-lg">
+    {/* card content */}
+  </a>
+</Card>
 ```
 
 ### 8.4 Error Retry
@@ -944,12 +1032,16 @@ const handleRetry = async () => {
 - Appropriate navigation or action based on context
 - For "My Quizzes": Navigate to `/quizzes/create` or `/generate` (AI generation)
 - For "Public Quizzes": Refresh/refetch data
+- Uses client-side navigation for smooth transitions
 
 **Implementation**:
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const handleEmptyStateAction = (type: TabType) => {
   if (type === 'my-quizzes') {
-    window.location.href = '/quizzes/create';
+    // Use Astro's client-side navigation
+    navigate('/quizzes/create');
   } else {
     refetchPublicQuizzes();
   }
@@ -1129,17 +1221,20 @@ if (currentListData.error) {
 
 **Handling**:
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 if (response.status === 401) {
-  // Redirect to login page
-  window.location.href = '/login?redirect=/dashboard';
+  // Redirect to login page using Astro's client-side navigation
+  navigate('/login?redirect=/dashboard');
   return;
 }
 ```
 
 **User Experience**:
-- Automatic redirect to login page
+- Automatic redirect to login page with smooth transition
 - Preserve intended destination in redirect parameter
 - After login, return to dashboard
+- No full page reload for better UX
 
 **Prevention**:
 - Implement session refresh mechanism
@@ -1793,6 +1888,8 @@ export function QuizListTabs({
 
 **Code Outline**:
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 export function DashboardContainer() {
   const {
     activeTab,
@@ -1808,7 +1905,8 @@ export function DashboardContainer() {
   const refetch = activeTab === 'my-quizzes' ? refetchMyQuizzes : refetchPublicQuizzes;
 
   const handleQuizClick = (quizId: string) => {
-    window.location.href = `/quizzes/${quizId}`;
+    // Use Astro's client-side navigation
+    navigate(`/quizzes/${quizId}`);
   };
 
   return (
@@ -1972,13 +2070,16 @@ export async function onRequest(context, next) {
 
 **Code Example**:
 ```typescript
+import { navigate } from 'astro:transitions/client';
+
 const QuizCard = React.memo(({ quiz, onClick }: QuizCardProps) => {
   // Component implementation
 });
 
 // In useDashboard
 const handleQuizClick = useCallback((quizId: string) => {
-  window.location.href = `/quizzes/${quizId}`;
+  // Use Astro's client-side navigation for smooth transitions
+  navigate(`/quizzes/${quizId}`);
 }, []);
 ```
 

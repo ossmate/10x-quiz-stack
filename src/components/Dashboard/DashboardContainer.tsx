@@ -6,6 +6,7 @@ import { LoadingSpinner } from "./LoadingSpinner.tsx";
 import { ErrorAlert } from "./ErrorAlert.tsx";
 import { EmptyState } from "./EmptyState.tsx";
 import { QuizList } from "./QuizList.tsx";
+import { navigate } from "astro:transitions/client";
 
 /**
  * Main dashboard container component that orchestrates the entire dashboard functionality
@@ -22,10 +23,10 @@ export function DashboardContainer() {
   const refetch = activeTab === "my-quizzes" ? refetchMyQuizzes : refetchPublicQuizzes;
 
   /**
-   * Handle quiz card click - navigate to quiz detail page
+   * Handle quiz card click - navigate to quiz detail page using Astro's client-side navigation
    */
   const handleQuizClick = (quizId: string) => {
-    window.location.href = `/quizzes/${quizId}`;
+    navigate(`/quizzes/${quizId}`);
   };
 
   /**
@@ -33,8 +34,8 @@ export function DashboardContainer() {
    */
   const handleEmptyStateAction = () => {
     if (activeTab === "my-quizzes") {
-      // Navigate to quiz creation page
-      window.location.href = "/quizzes/ai/generate";
+      // Navigate to quiz creation page using Astro's client-side navigation
+      navigate("/quizzes/ai/generate");
     } else {
       // Refresh public quizzes
       refetchPublicQuizzes();
