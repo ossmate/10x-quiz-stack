@@ -368,39 +368,75 @@ export class QuizService {
       source: "manual",
     };
 
-    // Transform questions with options
-    const questions = ((quiz.questions as any[]) || [])
-      .filter((q: any) => q.deleted_at === null)
-      .map((question: any) => {
-        // Transform options for this question
-        const options = ((question.answers as any[]) || [])
-          .filter((a: any) => a.deleted_at === null)
-          .map((answer: any) => ({
-            id: answer.id,
-            question_id: answer.question_id,
-            content: answer.content,
-            is_correct: answer.is_correct,
-            position: answer.order_index + 1, // Convert 0-based to 1-based
-            created_at: answer.created_at,
-          }))
-          .sort((a: any, b: any) => a.position - b.position);
+    const rawQuestions = quiz.questions;
+    if (!Array.isArray(rawQuestions)) {
+      return null;
+    }
 
-        // Extract explanation from AI metadata if available
-        const explanation = question.ai_generation_metadata?.explanation || metadata.ai_prompt || undefined;
+    const questions = rawQuestions
+      .filter((q) => q && typeof q === "object" && q.deleted_at === null)
+      .map((question) => {
+        if (!question.id || !question.quiz_id || !question.content || typeof question.order_index !== "number") {
+          return null;
+        }
+
+        const rawAnswers = question.answers;
+        if (!Array.isArray(rawAnswers)) {
+          return null;
+        }
+
+        const options = rawAnswers
+          .filter((a) => a && typeof a === "object" && a.deleted_at === null)
+          .map((answer) => {
+            if (
+              !answer.id ||
+              !answer.question_id ||
+              !answer.content ||
+              typeof answer.is_correct !== "boolean" ||
+              typeof answer.order_index !== "number"
+            ) {
+              return null;
+            }
+
+            return {
+              id: answer.id,
+              question_id: answer.question_id,
+              content: answer.content,
+              is_correct: answer.is_correct,
+              position: answer.order_index + 1,
+              created_at: answer.created_at,
+            };
+          })
+          .filter((opt): opt is NonNullable<typeof opt> => opt !== null)
+          .sort((a, b) => a.position - b.position);
+
+        if (options.length === 0) {
+          return null;
+        }
+
+        const explanation =
+          question.ai_generation_metadata && typeof question.ai_generation_metadata === "object"
+            ? question.ai_generation_metadata.explanation || undefined
+            : undefined;
 
         return {
           id: question.id,
           quiz_id: question.quiz_id,
           content: question.content,
           explanation,
-          position: question.order_index + 1, // Convert 0-based to 1-based
-          status: question.deleted_at === null ? ("active" as const) : ("deleted" as const),
+          position: question.order_index + 1,
+          status: "active" as const,
           created_at: question.created_at,
           updated_at: question.updated_at,
           options,
         };
       })
-      .sort((a: any, b: any) => a.position - b.position);
+      .filter((q): q is NonNullable<typeof q> => q !== null)
+      .sort((a, b) => a.position - b.position);
+
+    if (questions.length === 0) {
+      return null;
+    }
 
     // Build QuizDetailDTO
     return {
@@ -463,16 +499,17 @@ export class QuizService {
     }
 
     const totalItems = count || 0;
-    const totalPages = Math.ceil(totalItems / limit);
+    const totalPages = Math.ceil(totalItems / limit) || 1;
 
-    // Data query with pagination
+    const effectivePage = Math.min(Math.max(page, 1), totalPages);
+
     const { data: quizzes, error: dataError } = await supabase
       .from("quizzes")
       .select("*")
       .is("deleted_at", null)
       .or(baseFilter)
       .order(sort, { ascending: order === "asc" })
-      .range((page - 1) * limit, page * limit - 1);
+      .range((effectivePage - 1) * limit, effectivePage * limit - 1);
 
     if (dataError) {
       throw new Error(`Failed to fetch quizzes: ${dataError.message}`);
