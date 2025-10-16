@@ -4,14 +4,13 @@ import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 export const prerender = false;
 
 /**
- * GET /api/auth/session
- * Returns the current user session information
+ * POST /api/auth/logout
+ * Logs out the current user
  *
- * @returns 200 OK - User session data
- * @returns 401 Unauthorized - No session found
+ * @returns 200 OK - Logout successful
  * @returns 500 Internal Server Error
  */
-export const GET: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Create Supabase server instance
     const supabase = createSupabaseServerInstance({
@@ -19,20 +18,17 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       headers: request.headers,
     });
 
-    // Get current user
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    // Sign out
+    const { error } = await supabase.auth.signOut();
 
-    if (error || !user) {
+    if (error) {
       return new Response(
         JSON.stringify({
-          error: "Unauthorized",
-          message: "No active session found",
+          error: "Logout Failed",
+          message: error.message,
         }),
         {
-          status: 401,
+          status: 400,
           headers: {
             "Content-Type": "application/json",
           },
@@ -40,16 +36,9 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Get user profile (including username)
-    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
-
     return new Response(
       JSON.stringify({
-        user: {
-          id: user.id,
-          email: user.email,
-          username: profile?.username || user.email?.split("@")[0] || "User",
-        },
+        message: "Logout successful",
       }),
       {
         status: 200,
@@ -59,7 +48,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       }
     );
   } catch (error) {
-    console.error("Session error:", error);
+    console.error("Logout error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({

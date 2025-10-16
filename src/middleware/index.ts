@@ -1,24 +1,49 @@
 import { createClient } from "@supabase/supabase-js";
 import { defineMiddleware } from "astro:middleware";
 
-import { supabaseClient } from "../db/supabase.client.ts";
+import { createSupabaseServerInstance, supabaseClient } from "../db/supabase.client.ts";
 
 import type { Database } from "../db/database.types.ts";
 
 /**
- * List of routes that require authentication
- * Currently not enforced - uncomment the authentication check below to enable
+ * Public paths - accessible without authentication
+ * These include auth pages and public API endpoints
  */
-// const PROTECTED_ROUTES = ["/dashboard", "/quizzes/create", "/profile"];
+const PUBLIC_PATHS = [
+  // Public pages
+  "/",
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+  // Auth API endpoints
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/logout",
+  "/api/auth/session",
+];
+
+/**
+ * Protected routes - require authentication
+ */
+const PROTECTED_ROUTES = [
+  "/quizzes/new",
+  "/quizzes/ai/generate",
+  "/auth/change-password",
+  // Add more protected routes here
+];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  // For API routes, use service role key to bypass RLS
-  if (context.url.pathname.startsWith("/api/")) {
+  const { url, cookies, request, redirect, locals } = context;
+
+  // For API routes (non-auth), use service role key to bypass RLS
+  if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) {
     const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (serviceRoleKey) {
       // Use service role client (bypasses RLS)
-      context.locals.supabase = createClient<Database>(import.meta.env.SUPABASE_URL, serviceRoleKey, {
+      locals.supabase = createClient<Database>(import.meta.env.SUPABASE_URL, serviceRoleKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false,
@@ -26,29 +51,53 @@ export const onRequest = defineMiddleware(async (context, next) => {
       });
     } else {
       // Fallback to regular client (RLS will apply)
-      context.locals.supabase = supabaseClient;
+      locals.supabase = supabaseClient;
     }
-  } else {
-    context.locals.supabase = supabaseClient;
+
+    return next();
   }
 
-  // Check authentication for protected routes
-  // Note: Authentication check is currently disabled for easier development
-  // To enable authentication, uncomment the following code:
-  /*
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route));
+  // For auth routes and pages, use SSR-compatible client
+  const supabase = createSupabaseServerInstance({
+    cookies,
+    headers: request.headers,
+  });
 
-  if (isProtectedRoute) {
-    const {
-      data: { session },
-    } = await context.locals.supabase.auth.getSession();
+  locals.supabase = supabase;
 
-    if (!session) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(context.url.pathname)}`;
-      return Response.redirect(new URL(redirectUrl, context.url.origin));
-    }
+  // Get current user session
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Store user in locals for easy access
+  if (user) {
+    locals.user = {
+      id: user.id,
+      email: user.email || "",
+    };
   }
-  */
+
+  // Check if route is protected
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => {
+    if (route.includes("*")) {
+      const pattern = new RegExp(`^${route.replace("*", ".*")}$`);
+      return pattern.test(url.pathname);
+    }
+    return url.pathname.startsWith(route);
+  });
+
+  // Redirect unauthenticated users from protected routes
+  if (isProtectedRoute && !user) {
+    const redirectUrl = `/auth/login?redirect=${encodeURIComponent(url.pathname)}`;
+    return redirect(redirectUrl);
+  }
+
+  // Redirect authenticated users from auth pages to home
+  const isAuthPage = url.pathname === "/auth/login" || url.pathname === "/auth/register";
+  if (isAuthPage && user) {
+    return redirect("/");
+  }
 
   return next();
 });
