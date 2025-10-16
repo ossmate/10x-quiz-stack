@@ -24,7 +24,6 @@ interface UseQuizTakingReturn {
   progressInfo: ProgressInfo;
 
   // Actions
-  startQuiz: () => Promise<void>;
   selectOption: (questionId: string, optionId: string) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
@@ -85,120 +84,6 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
 
     return correctCount;
   }, []);
-
-  /**
-   * Fetch quiz and create attempt
-   */
-  const startQuiz = useCallback(async () => {
-    if (!isValidUuid) {
-      setTakingState((prev) => ({
-        ...prev,
-        phase: "error",
-        error: "Invalid quiz ID format",
-      }));
-      return;
-    }
-
-    setTakingState((prev) => ({
-      ...prev,
-      phase: "loading",
-      error: null,
-    }));
-
-    try {
-      // Fetch quiz details
-      const quizResponse = await fetch(`/api/quizzes/${quizId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-
-      if (quizResponse.status === 401) {
-        navigate(`/login?redirect=/quizzes/${quizId}/take`);
-        return;
-      }
-
-      if (!quizResponse.ok) {
-        const errorData = await quizResponse.json().catch(() => ({
-          message: "Failed to load quiz",
-        }));
-
-        // eslint-disable-next-line no-console
-        console.error("Quiz fetch error:", {
-          status: quizResponse.status,
-          quizId,
-          errorData,
-        });
-
-        if (quizResponse.status === 404) {
-          throw new Error("Quiz not found or you don't have access to it.");
-        }
-        if (quizResponse.status === 400) {
-          throw new Error("Invalid quiz ID.");
-        }
-
-        throw new Error(errorData.message || "Failed to load quiz. Please try again.");
-      }
-
-      const quiz: QuizDetailDTO = await quizResponse.json();
-
-      // eslint-disable-next-line no-console
-      console.log("Quiz fetched successfully:", {
-        id: quiz.id,
-        title: quiz.title,
-        questionCount: quiz.questions?.length || 0,
-      });
-
-      // Validate quiz has questions
-      if (!quiz.questions || quiz.questions.length === 0) {
-        throw new Error("This quiz has no questions to take.");
-      }
-
-      // Create quiz attempt
-      const attemptResponse = await fetch(`/api/quizzes/${quizId}/attempts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ quiz_id: quizId }),
-      });
-
-      if (attemptResponse.status === 401) {
-        navigate(`/login?redirect=/quizzes/${quizId}/take`);
-        return;
-      }
-
-      if (!attemptResponse.ok) {
-        const errorData = await attemptResponse.json().catch(() => ({
-          message: "Failed to create quiz attempt",
-        }));
-
-        throw new Error(errorData.message || "Failed to start quiz. Please try again.");
-      }
-
-      const attempt: QuizAttemptDTO = await attemptResponse.json();
-
-      // Set state to 'taking'
-      setTakingState({
-        phase: "taking",
-        quiz,
-        attempt,
-        currentQuestionIndex: 0,
-        userAnswers: {},
-        score: null,
-        error: null,
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-      setTakingState((prev) => ({
-        ...prev,
-        phase: "error",
-        error: errorMessage,
-      }));
-
-      // eslint-disable-next-line no-console
-      console.error("Error starting quiz:", err);
-    }
-  }, [quizId, isValidUuid]);
 
   /**
    * Select or deselect an option for a question
@@ -424,8 +309,7 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
       isLastQuestion: currentQuestionIndex === totalQuestions - 1,
       isFirstQuestion: currentQuestionIndex === 0,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [takingState.quiz, takingState.currentQuestionIndex]);
+  }, [takingState]);
 
   // Computed: Progress info
   const progressInfo = useMemo<ProgressInfo>(() => {
@@ -464,17 +348,138 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
     };
   }, [takingState]);
 
-  // Initialize quiz on mount
+  // Initialize quiz on mount - only run once per quizId change
   useEffect(() => {
-    startQuiz();
-  }, [startQuiz]);
+    // Validate UUID format
+    if (!isValidUuid) {
+      setTakingState({
+        phase: "error",
+        quiz: null,
+        attempt: null,
+        currentQuestionIndex: 0,
+        userAnswers: {},
+        score: null,
+        error: "Invalid quiz ID format",
+      });
+      return;
+    }
+
+    // Reset state when quizId changes and start loading
+    setTakingState({
+      phase: "loading",
+      quiz: null,
+      attempt: null,
+      currentQuestionIndex: 0,
+      userAnswers: {},
+      score: null,
+      error: null,
+    });
+
+    // Define async function inside effect to avoid stale closure
+    const fetchQuizAndCreateAttempt = async () => {
+      try {
+        // Fetch quiz details
+        const quizResponse = await fetch(`/api/quizzes/${quizId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+
+        if (quizResponse.status === 401) {
+          navigate(`/login?redirect=/quizzes/${quizId}/take`);
+          return;
+        }
+
+        if (!quizResponse.ok) {
+          const errorData = await quizResponse.json().catch(() => ({
+            message: "Failed to load quiz",
+          }));
+
+          // eslint-disable-next-line no-console
+          console.error("Quiz fetch error:", {
+            status: quizResponse.status,
+            quizId,
+            errorData,
+          });
+
+          if (quizResponse.status === 404) {
+            throw new Error("Quiz not found or you don't have access to it.");
+          }
+          if (quizResponse.status === 400) {
+            throw new Error("Invalid quiz ID.");
+          }
+
+          throw new Error(errorData.message || "Failed to load quiz. Please try again.");
+        }
+
+        const quiz: QuizDetailDTO = await quizResponse.json();
+
+        // eslint-disable-next-line no-console
+        console.log("Quiz fetched successfully:", {
+          id: quiz.id,
+          title: quiz.title,
+          questionCount: quiz.questions?.length || 0,
+        });
+
+        // Validate quiz has questions
+        if (!quiz.questions || quiz.questions.length === 0) {
+          throw new Error("This quiz has no questions to take.");
+        }
+
+        // Create quiz attempt
+        const attemptResponse = await fetch(`/api/quizzes/${quizId}/attempts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ quiz_id: quizId }),
+        });
+
+        if (attemptResponse.status === 401) {
+          navigate(`/login?redirect=/quizzes/${quizId}/take`);
+          return;
+        }
+
+        if (!attemptResponse.ok) {
+          const errorData = await attemptResponse.json().catch(() => ({
+            message: "Failed to create quiz attempt",
+          }));
+
+          throw new Error(errorData.message || "Failed to start quiz. Please try again.");
+        }
+
+        const attempt: QuizAttemptDTO = await attemptResponse.json();
+
+        // Set state to 'taking'
+        setTakingState({
+          phase: "taking",
+          quiz,
+          attempt,
+          currentQuestionIndex: 0,
+          userAnswers: {},
+          score: null,
+          error: null,
+        });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+        setTakingState((prev) => ({
+          ...prev,
+          phase: "error",
+          error: errorMessage,
+        }));
+
+        // eslint-disable-next-line no-console
+        console.error("Error starting quiz:", err);
+      }
+    };
+
+    fetchQuizAndCreateAttempt();
+  }, [quizId, isValidUuid]); // Only depend on quizId and isValidUuid
 
   return {
     takingState,
     currentQuestion,
     navigationState,
     progressInfo,
-    startQuiz,
     selectOption,
     nextQuestion,
     previousQuestion,

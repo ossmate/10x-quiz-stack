@@ -54,7 +54,7 @@ export function QuizTakingContainer({ quizId, currentUserId }: QuizTakingContain
         quiz={takingState.quiz}
         onRetry={retryQuiz}
         onBackToQuiz={() => (window.location.href = `/quizzes/${quizId}`)}
-        isRetrying={takingState.phase === "loading"}
+        isRetrying={false}
       />
     );
   }
