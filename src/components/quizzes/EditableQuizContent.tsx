@@ -328,7 +328,9 @@ export function EditableQuizContent({
             {editableQuiz.validationErrors.description && (
               <p className="mt-1 text-sm text-destructive">{editableQuiz.validationErrors.description}</p>
             )}
-            <p className="mt-1 text-sm text-muted-foreground">{editableQuiz.description?.length || 0}/1000 characters</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {editableQuiz.description?.length || 0}/1000 characters
+            </p>
           </div>
         </div>
 
@@ -392,7 +394,9 @@ export function EditableQuizContent({
                         onChange={(e) => updateQuestion(question.id, "content", e.target.value)}
                         rows={2}
                       />
-                      {questionErrors?.content && <p className="mt-1 text-sm text-destructive">{questionErrors.content}</p>}
+                      {questionErrors?.content && (
+                        <p className="mt-1 text-sm text-destructive">{questionErrors.content}</p>
+                      )}
                     </div>
 
                     {/* Question Options */}
@@ -473,7 +477,9 @@ export function EditableQuizContent({
               })
             ) : (
               <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
-                <p className="text-muted-foreground">No questions yet. Click "Add Question" to create your first question.</p>
+                <p className="text-muted-foreground">
+                  No questions yet. Click "Add Question" to create your first question.
+                </p>
               </div>
             )}
           </div>

@@ -80,7 +80,10 @@ export function AIQuizGenerator() {
         <div className="space-y-4">
           <LoadingIndicator isLoading={true} statusMessage="Generating your quiz using AI. This may take a moment..." />
           <div className="flex justify-center">
-            <button onClick={handleReset} className="text-sm text-muted-foreground hover:text-foreground flex items-center">
+            <button
+              onClick={handleReset}
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center"
+            >
               <svg
                 className="w-4 h-4 mr-1"
                 fill="none"
