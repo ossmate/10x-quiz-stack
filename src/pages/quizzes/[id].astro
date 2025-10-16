@@ -20,7 +20,7 @@ const currentUserId = session?.userId;
 
 // Ensure quiz ID exists
 if (!id) {
-  return Astro.redirect("/dashboard");
+  return Astro.redirect("/");
 }
 
 // Fetch quiz title for breadcrumbs
@@ -38,8 +38,7 @@ try {
 
 // Define breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
-  { label: "Home", path: "/" },
-  { label: "Quizzes", path: "/dashboard" },
+  { label: "Dashboard", path: "/" },
   { label: quizTitle, path: `/quizzes/${id}`, isCurrent: true },
 ];
 ---

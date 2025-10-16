@@ -56,7 +56,7 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
         });
 
         if (response.status === 401) {
-          navigate("/login?redirect=/dashboard");
+          navigate("/login?redirect=/");
           throw new Error("Unauthorized");
         }
 

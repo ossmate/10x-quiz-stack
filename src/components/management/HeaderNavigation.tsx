@@ -10,7 +10,7 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const navigationLinks: NavigationLink[] = [
-    { title: "Dashboard", path: "/dashboard", isActive: currentPath === "/dashboard" },
+    { title: "Dashboard", path: "/", isActive: currentPath === "/" },
     { title: "Create Quiz", path: "/quizzes/new", isActive: currentPath === "/quizzes/new" },
     { title: "Generate Quiz", path: "/quizzes/ai/generate", isActive: currentPath === "/quizzes/ai/generate" },
   ];
