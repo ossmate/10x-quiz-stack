@@ -25,10 +25,10 @@ Instead, use these semantic tokens that automatically adapt to light/dark mode:
 
 ```tsx
 // ❌ WRONG
-className="bg-white text-gray-900"
+className = "bg-white text-gray-900";
 
 // ✅ CORRECT
-className="bg-background text-foreground"
+className = "bg-background text-foreground";
 ```
 
 - `bg-background` / `text-foreground` - Base page background and text
@@ -39,10 +39,10 @@ className="bg-background text-foreground"
 
 ```tsx
 // ❌ WRONG
-className="bg-blue-600 text-white hover:bg-blue-700"
+className = "bg-blue-600 text-white hover:bg-blue-700";
 
 // ✅ CORRECT
-className="bg-primary text-primary-foreground hover:bg-primary/90"
+className = "bg-primary text-primary-foreground hover:bg-primary/90";
 ```
 
 - `bg-primary` / `text-primary-foreground` - Primary actions (buttons, links)
@@ -54,10 +54,10 @@ className="bg-primary text-primary-foreground hover:bg-primary/90"
 
 ```tsx
 // ❌ WRONG
-className="bg-red-50 border-red-300 text-red-700"
+className = "bg-red-50 border-red-300 text-red-700";
 
 // ✅ CORRECT
-className="bg-destructive/10 border-destructive text-destructive"
+className = "bg-destructive/10 border-destructive text-destructive";
 ```
 
 - `bg-destructive` / `text-destructive` / `border-destructive` - Errors, delete actions
@@ -67,10 +67,10 @@ className="bg-destructive/10 border-destructive text-destructive"
 
 ```tsx
 // ❌ WRONG
-className="border-gray-300 focus:border-blue-500"
+className = "border-gray-300 focus:border-blue-500";
 
 // ✅ CORRECT
-className="border-border focus:border-primary"
+className = "border-border focus:border-primary";
 ```
 
 - `border-border` - Default borders
@@ -107,13 +107,14 @@ Use semantic radius tokens instead of hardcoded values:
 
 ```tsx
 // ❌ WRONG
-className="rounded-lg"
+className = "rounded-lg";
 
 // ✅ CORRECT (though rounded-lg works via theme mapping)
-className="rounded-lg" // Maps to var(--radius)
+className = "rounded-lg"; // Maps to var(--radius)
 ```
 
 Available radius utilities (all mapped to CSS variables):
+
 - `rounded-sm` - Small radius
 - `rounded-md` - Medium radius
 - `rounded-lg` - Large radius (default)
@@ -124,11 +125,11 @@ Available radius utilities (all mapped to CSS variables):
 Use semantic shadow utilities:
 
 ```tsx
-className="shadow-sm"  // Small shadow
-className="shadow"     // Default shadow
-className="shadow-md"  // Medium shadow
-className="shadow-lg"  // Large shadow
-className="shadow-xl"  // Extra large shadow
+className = "shadow-sm"; // Small shadow
+className = "shadow"; // Default shadow
+className = "shadow-md"; // Medium shadow
+className = "shadow-lg"; // Large shadow
+className = "shadow-xl"; // Extra large shadow
 ```
 
 All shadows are theme-aware and defined in CSS variables.
@@ -243,28 +244,25 @@ To implement a dark mode toggle:
 // Example toggle component
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
-  
+
   const toggleTheme = () => {
     const html = document.documentElement;
     if (isDark) {
-      html.classList.remove('dark');
+      html.classList.remove("dark");
     } else {
-      html.classList.add('dark');
+      html.classList.add("dark");
     }
     setIsDark(!isDark);
   };
-  
-  return (
-    <button onClick={toggleTheme}>
-      {isDark ? '☀️ Light' : '🌙 Dark'}
-    </button>
-  );
+
+  return <button onClick={toggleTheme}>{isDark ? "☀️ Light" : "🌙 Dark"}</button>;
 }
 ```
 
 ## Current Theme Configuration
 
 The theme is currently set to **dark mode by default** in both layout files:
+
 - `src/layouts/Layout.astro` - `<html class="dark">`
 - `src/layouts/ManagementLayout.astro` - `<html class="dark">`
 

@@ -138,7 +138,9 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
               key={link.path}
               href={link.path}
               className={`block rounded-md px-3 py-2 text-base font-medium ${
-                link.isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                link.isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
               aria-current={link.isActive ? "page" : undefined}
             >

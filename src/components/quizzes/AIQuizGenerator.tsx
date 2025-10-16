@@ -80,7 +80,7 @@ export function AIQuizGenerator() {
         <div className="space-y-4">
           <LoadingIndicator isLoading={true} statusMessage="Generating your quiz using AI. This may take a moment..." />
           <div className="flex justify-center">
-            <button onClick={handleReset} className="text-sm text-gray-500 hover:text-gray-700 flex items-center">
+            <button onClick={handleReset} className="text-sm text-muted-foreground hover:text-foreground flex items-center">
               <svg
                 className="w-4 h-4 mr-1"
                 fill="none"
@@ -130,9 +130,9 @@ export function AIQuizGenerator() {
       {/* Completed State (Preview Mode) - Show Quiz Preview with Actions */}
       {state.status === "completed" && !state.isEditing && state.generatedQuiz && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Generated Quiz Preview</h2>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+            <h2 className="text-lg font-medium text-foreground">Generated Quiz Preview</h2>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent-foreground">
               AI Generated
             </span>
           </div>
@@ -144,7 +144,7 @@ export function AIQuizGenerator() {
               <div className="flex flex-wrap gap-3 mt-4">
                 <button
                   onClick={handleToggleEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
                 >
                   <svg
                     className="w-4 h-4 mr-1"
@@ -164,7 +164,7 @@ export function AIQuizGenerator() {
                 </button>
                 <button
                   onClick={() => state.generatedQuiz && handleSaveQuiz(state.generatedQuiz)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+                  className="px-4 py-2 bg-accent text-accent-foreground rounded-md hover:bg-accent/90 flex items-center"
                 >
                   <svg
                     className="w-4 h-4 mr-1"
@@ -179,7 +179,7 @@ export function AIQuizGenerator() {
                 </button>
                 <button
                   onClick={handleReset}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center"
+                  className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10 flex items-center"
                 >
                   <svg
                     className="w-4 h-4 mr-1"
@@ -201,9 +201,9 @@ export function AIQuizGenerator() {
       {/* Editing State - Show Editable Quiz Content */}
       {state.status === "completed" && state.isEditing && state.generatedQuiz && editableQuizHook && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Edit Your Quiz</h2>
-            <span className="text-sm text-gray-500">Make any changes before publishing</span>
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+            <h2 className="text-lg font-medium text-foreground">Edit Your Quiz</h2>
+            <span className="text-sm text-muted-foreground">Make any changes before publishing</span>
           </div>
 
           <EditableQuizContent

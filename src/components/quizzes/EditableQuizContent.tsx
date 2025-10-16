@@ -286,60 +286,60 @@ export function EditableQuizContent({
     <div className={`space-y-8 ${className}`}>
       <div className="space-y-6">
         {/* Quiz Metadata Section */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Quiz Details</h2>
+        <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+          <h2 className="text-lg font-medium text-foreground mb-4">Quiz Details</h2>
 
           {/* Title Field */}
           <div className="mb-4">
-            <label htmlFor="quiz-title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="quiz-title" className="block text-sm font-medium text-foreground mb-1">
               Quiz Title*
             </label>
             <input
               id="quiz-title"
               type="text"
-              className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                editableQuiz.validationErrors.title ? "border-red-300" : ""
+              className={`block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm ${
+                editableQuiz.validationErrors.title ? "border-destructive" : ""
               }`}
               value={editableQuiz.title}
               onChange={(e) => updateMetadata("title", e.target.value)}
               maxLength={200}
             />
             {editableQuiz.validationErrors.title && (
-              <p className="mt-1 text-sm text-red-600">{editableQuiz.validationErrors.title}</p>
+              <p className="mt-1 text-sm text-destructive">{editableQuiz.validationErrors.title}</p>
             )}
-            <p className="mt-1 text-sm text-gray-500">{editableQuiz.title?.length || 0}/200 characters</p>
+            <p className="mt-1 text-sm text-muted-foreground">{editableQuiz.title?.length || 0}/200 characters</p>
           </div>
 
           {/* Description Field */}
           <div>
-            <label htmlFor="quiz-description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="quiz-description" className="block text-sm font-medium text-foreground mb-1">
               Description
             </label>
             <textarea
               id="quiz-description"
               rows={3}
-              className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                editableQuiz.validationErrors.description ? "border-red-300" : ""
+              className={`block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm ${
+                editableQuiz.validationErrors.description ? "border-destructive" : ""
               }`}
               value={editableQuiz.description || ""}
               onChange={(e) => updateMetadata("description", e.target.value)}
               maxLength={1000}
             />
             {editableQuiz.validationErrors.description && (
-              <p className="mt-1 text-sm text-red-600">{editableQuiz.validationErrors.description}</p>
+              <p className="mt-1 text-sm text-destructive">{editableQuiz.validationErrors.description}</p>
             )}
-            <p className="mt-1 text-sm text-gray-500">{editableQuiz.description?.length || 0}/1000 characters</p>
+            <p className="mt-1 text-sm text-muted-foreground">{editableQuiz.description?.length || 0}/1000 characters</p>
           </div>
         </div>
 
         {/* Questions Section */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Questions</h2>
+            <h2 className="text-lg font-medium text-foreground">Questions</h2>
             <button
               type="button"
               onClick={addQuestion}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
             >
               Add Question
             </button>
@@ -347,8 +347,8 @@ export function EditableQuizContent({
 
           {/* General validation errors */}
           {editableQuiz.validationErrors.general && editableQuiz.validationErrors.general.length > 0 && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <ul className="list-disc list-inside text-sm text-red-600">
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive rounded-md">
+              <ul className="list-disc list-inside text-sm text-destructive">
                 {editableQuiz.validationErrors.general.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
@@ -363,20 +363,20 @@ export function EditableQuizContent({
                 const questionErrors = editableQuiz.validationErrors.questions?.[question.id];
 
                 return (
-                  <div key={question.id} className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                  <div key={question.id} className="border border-border rounded-md p-4 bg-muted">
                     {/* Question Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">
-                        <span className="bg-blue-100 text-blue-800 font-medium rounded-full w-6 h-6 flex items-center justify-center mr-2">
+                        <span className="bg-primary/10 text-primary font-medium rounded-full w-6 h-6 flex items-center justify-center mr-2">
                           {questionIndex + 1}
                         </span>
-                        <h3 className="text-sm font-medium text-gray-900">Question</h3>
+                        <h3 className="text-sm font-medium text-foreground">Question</h3>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => removeQuestion(question.id)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="text-destructive hover:text-destructive/80 text-sm"
                       >
                         Remove
                       </button>
@@ -385,19 +385,19 @@ export function EditableQuizContent({
                     {/* Question Content */}
                     <div className="mb-4">
                       <textarea
-                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                          questionErrors?.content ? "border-red-300" : ""
+                        className={`block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm ${
+                          questionErrors?.content ? "border-destructive" : ""
                         }`}
                         value={question.content}
                         onChange={(e) => updateQuestion(question.id, "content", e.target.value)}
                         rows={2}
                       />
-                      {questionErrors?.content && <p className="mt-1 text-sm text-red-600">{questionErrors.content}</p>}
+                      {questionErrors?.content && <p className="mt-1 text-sm text-destructive">{questionErrors.content}</p>}
                     </div>
 
                     {/* Question Options */}
                     <div className="space-y-3 mb-4">
-                      <label className="block text-sm font-medium text-gray-700">Answer Options</label>
+                      <label className="block text-sm font-medium text-foreground">Answer Options</label>
 
                       {question.options &&
                         question.options.map((option) => {
@@ -415,24 +415,24 @@ export function EditableQuizContent({
                                     updateOption(question.id, o.id, "is_correct", o.id === option.id);
                                   });
                                 }}
-                                className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="h-4 w-4 border-input text-primary focus:ring-primary"
                               />
                               <div className="flex-grow">
                                 <input
                                   type="text"
                                   value={option.content}
                                   onChange={(e) => updateOption(question.id, option.id, "content", e.target.value)}
-                                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                                    optionError ? "border-red-300" : ""
+                                  className={`block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm ${
+                                    optionError ? "border-destructive" : ""
                                   }`}
                                 />
-                                {optionError && <p className="mt-1 text-sm text-red-600">{optionError}</p>}
+                                {optionError && <p className="mt-1 text-sm text-destructive">{optionError}</p>}
                               </div>
                               {question.options && question.options.length > 2 && (
                                 <button
                                   type="button"
                                   onClick={() => removeOption(question.id, option.id)}
-                                  className="text-red-600 hover:text-red-800 text-sm"
+                                  className="text-destructive hover:text-destructive/80 text-sm"
                                 >
                                   Remove
                                 </button>
@@ -445,7 +445,7 @@ export function EditableQuizContent({
                       <button
                         type="button"
                         onClick={() => addOption(question.id)}
-                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex items-center px-3 py-1.5 border border-border shadow-sm text-xs font-medium rounded-md text-foreground bg-background hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                       >
                         Add Option
                       </button>
@@ -455,14 +455,14 @@ export function EditableQuizContent({
                     <div>
                       <label
                         htmlFor={`explanation-${question.id}`}
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-foreground mb-1"
                       >
                         Explanation (Optional)
                       </label>
                       <textarea
                         id={`explanation-${question.id}`}
                         rows={2}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        className="block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                         value={question.explanation || ""}
                         onChange={(e) => updateQuestion(question.id, "explanation", e.target.value)}
                         placeholder="Explain why the correct answer is correct..."
@@ -472,8 +472,8 @@ export function EditableQuizContent({
                 );
               })
             ) : (
-              <div className="text-center py-8 border border-dashed border-gray-300 rounded-md bg-gray-50">
-                <p className="text-gray-500">No questions yet. Click "Add Question" to create your first question.</p>
+              <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
+                <p className="text-muted-foreground">No questions yet. Click "Add Question" to create your first question.</p>
               </div>
             )}
           </div>
@@ -481,11 +481,11 @@ export function EditableQuizContent({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+      <div className="flex justify-end space-x-4 pt-4 border-t border-border">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+          className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10"
         >
           {cancelButtonText}
         </button>
@@ -493,10 +493,10 @@ export function EditableQuizContent({
           type="button"
           onClick={handleSave}
           disabled={!isValid || !editableQuiz.isDirty}
-          className={`px-4 py-2 rounded-md text-white ${
+          className={`px-4 py-2 rounded-md ${
             isValid && editableQuiz.isDirty
-              ? "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              : "bg-blue-400 cursor-not-allowed"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+              : "bg-primary/40 text-primary-foreground/60 cursor-not-allowed"
           }`}
         >
           {saveButtonText}

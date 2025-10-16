@@ -1,5 +1,4 @@
 import type { QuizDetailDTO, QuizGenerationRequest } from "../../types";
-import { aiQuizGeneratorService, type AIGeneratedQuizContent } from "./ai-quiz-generator.service";
 
 /**
  * Client-side wrapper for the AI Quiz Generator Service
@@ -24,16 +23,13 @@ export class AIQuizClientService {
         throw new Error("Prompt is too long. Maximum 1000 characters allowed");
       }
 
-      // Create the command
-      const command = aiQuizGeneratorService.createCommand(prompt.trim());
-
       // Make API request
       const response = await fetch("/api/quizzes/ai/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: command.prompt }),
+        body: JSON.stringify({ prompt: prompt.trim() }),
       });
 
       // Handle non-successful responses
