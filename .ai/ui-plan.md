@@ -11,6 +11,7 @@ This project uses **Tailwind CSS 4** with a comprehensive theming system that su
 **📖 For detailed theming guidelines, see:** `.claude/docs/tailwind-theming.md`
 
 **Key Principles:**
+
 - Use semantic tokens for all colors
 - Components automatically adapt to light/dark mode
 - OKLCH color space for perceptual uniformity
