@@ -1,0 +1,23 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { QuizTakingContainer } from "../../../components/quiz-taking/QuizTakingContainer.tsx";
+
+// Set prerender to false as this page requires authentication
+export const prerender = false;
+
+// Extract quiz ID from route parameters
+const { id } = Astro.params;
+
+// Note: Using DEFAULT_USER_ID from environment for development
+// In production, this will be replaced with proper authentication
+const currentUserId = import.meta.env.DEFAULT_USER_ID;
+
+// Ensure quiz ID exists
+if (!id) {
+  return Astro.redirect("/dashboard");
+}
+---
+
+<Layout title="Take Quiz | QuizStack">
+  <QuizTakingContainer client:load quizId={id} currentUserId={currentUserId} />
+</Layout>

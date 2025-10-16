@@ -240,3 +240,62 @@ export interface QuizGenerationRequest {
   onSuccess: (quiz: QuizDetailDTO) => void;
   onError: (error: string) => void;
 }
+
+// Quiz Taking View Models
+
+/**
+ * State machine for quiz taking flow
+ * Tracks the current phase and all necessary data for taking a quiz
+ */
+export interface TakingState {
+  phase: "loading" | "ready" | "taking" | "submitting" | "completed" | "error";
+  quiz: QuizDetailDTO | null;
+  attempt: QuizAttemptDTO | null;
+  currentQuestionIndex: number;
+  userAnswers: Record<string, string[]>; // questionId -> selectedOptionIds[]
+  score: number | null;
+  error: string | null;
+}
+
+/**
+ * Individual question answer for type safety
+ */
+export interface QuizAnswer {
+  questionId: string;
+  selectedOptionIds: string[];
+}
+
+/**
+ * Complete results data for display after quiz completion
+ */
+export interface QuizResult {
+  attemptId: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  correctAnswers: number;
+  userAnswers: Record<string, string[]>;
+  quiz: QuizDetailDTO;
+}
+
+/**
+ * Derived navigation state for button states
+ */
+export interface NavigationState {
+  currentQuestionIndex: number;
+  totalQuestions: number;
+  canGoPrevious: boolean;
+  canGoNext: boolean;
+  isLastQuestion: boolean;
+  isFirstQuestion: boolean;
+}
+
+/**
+ * Progress indicator metrics
+ */
+export interface ProgressInfo {
+  current: number; // 1-indexed for display
+  total: number;
+  percentage: number; // 0-100
+  answered: number; // Number of questions answered
+}
