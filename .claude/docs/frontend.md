@@ -9,13 +9,37 @@
 
 ## Styling with Tailwind
 
+**⚠️ CRITICAL: Always use semantic color tokens - Never hardcode colors!**
+
+📖 **See detailed theming guide:** `.claude/docs/tailwind-theming.md`
+
+### Color Token Rules
+
+- ❌ **NEVER** use hardcoded colors: `bg-gray-50`, `text-blue-600`, `bg-white`, `text-gray-900`
+- ✅ **ALWAYS** use semantic tokens: `bg-background`, `text-foreground`, `bg-primary`, `bg-card`
+- Use semantic tokens to ensure automatic light/dark mode support
+- All colors use OKLCH color space for perceptual uniformity
+
+### Common Token Replacements
+
+- `bg-white` → `bg-card` or `bg-background`
+- `bg-gray-50` → `bg-muted`
+- `text-gray-900` → `text-foreground`
+- `text-gray-600` → `text-muted-foreground`
+- `bg-blue-600` → `bg-primary`
+- `text-blue-600` → `text-primary`
+- `bg-red-50` → `bg-destructive/10`
+- `border-gray-300` → `border-border`
+
+### Tailwind Best Practices
+
 - Use the @layer directive to organize styles into components, utilities, and base layers
 - Use arbitrary values with square brackets (e.g., w-[123px]) for precise one-off designs
-- Implement the Tailwind configuration file for customizing theme, plugins, and variants
 - Leverage the theme() function in CSS for accessing Tailwind theme values
-- Implement dark mode with the dark: variant
+- Implement dark mode with the dark: variant (automatically handled via `<html class="dark">`)
 - Use responsive variants (sm:, md:, lg:, etc.) for adaptive designs
 - Leverage state variants (hover:, focus-visible:, active:, etc.) for interactive elements
+- Use opacity modifiers for subtle backgrounds: `bg-primary/10`, `bg-destructive/20`
 
 ## Accessibility (ARIA Best Practices)
 

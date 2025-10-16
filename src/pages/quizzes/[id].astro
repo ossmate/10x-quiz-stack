@@ -1,6 +1,8 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import ManagementLayout from "../../layouts/ManagementLayout.astro";
 import { QuizDetailContainer } from "../../components/quiz-detail/QuizDetailContainer.tsx";
+import { Breadcrumbs } from "../../components/management/Breadcrumbs";
+import type { BreadcrumbItem } from "../../types/management.types";
 
 // Set prerender to false as this page requires authentication
 export const prerender = false;
@@ -18,10 +20,31 @@ const currentUserId = session?.userId;
 
 // Ensure quiz ID exists
 if (!id) {
-  return Astro.redirect("/dashboard");
+  return Astro.redirect("/");
 }
+
+// Fetch quiz title for breadcrumbs
+let quizTitle = "Loading...";
+try {
+  const response = await fetch(`${Astro.url.origin}/api/quizzes/${id}`);
+  if (response.ok) {
+    const quizData = await response.json();
+    quizTitle = quizData.title || "Quiz";
+  }
+} catch {
+  // If fetch fails, we'll show "Quiz" as fallback
+  quizTitle = "Quiz";
+}
+
+// Define breadcrumbs
+const breadcrumbs: BreadcrumbItem[] = [
+  { label: "Dashboard", path: "/" },
+  { label: quizTitle, path: `/quizzes/${id}`, isCurrent: true },
+];
 ---
 
-<Layout title="Quiz Details | QuizStack">
+<ManagementLayout title={`${quizTitle} | QuizStack`}>
+  <Breadcrumbs client:load items={breadcrumbs} />
+
   <QuizDetailContainer client:load quizId={id} currentUserId={currentUserId} />
-</Layout>
+</ManagementLayout>

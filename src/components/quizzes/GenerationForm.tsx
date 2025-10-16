@@ -50,13 +50,13 @@ export function GenerationForm({ onSubmit, isLoading, error = null, initialValue
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="p-4 border border-red-300 bg-red-50 rounded-md">
-          <p className="text-red-700">{error}</p>
+        <div className="p-4 border border-destructive bg-destructive/10 rounded-md">
+          <p className="text-destructive">{error}</p>
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="prompt" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="prompt" className="block text-sm font-medium text-foreground">
           Describe your quiz topic and content
         </label>
 
@@ -64,8 +64,8 @@ export function GenerationForm({ onSubmit, isLoading, error = null, initialValue
           id="prompt"
           name="prompt"
           rows={5}
-          className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
-            !isValid && prompt.trim().length > 0 ? "border-red-300" : ""
+          className={`block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary ${
+            !isValid && prompt.trim().length > 0 ? "border-destructive" : ""
           }`}
           placeholder="E.g., Create a quiz about the solar system with questions about planets, moons, and space exploration..."
           value={prompt}
@@ -74,18 +74,18 @@ export function GenerationForm({ onSubmit, isLoading, error = null, initialValue
         />
 
         <div className="flex justify-between text-sm">
-          <span className={!isValid ? "text-red-600" : "text-gray-500"}>
+          <span className={!isValid ? "text-destructive" : "text-muted-foreground"}>
             {validationMessage || "Be specific about the topic and difficulty level"}
           </span>
-          <span className={prompt.length > MAX_CHARS ? "text-red-600" : "text-gray-500"}>
+          <span className={prompt.length > MAX_CHARS ? "text-destructive" : "text-muted-foreground"}>
             {prompt.length}/{MAX_CHARS}
           </span>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-md">
-        <h3 className="text-sm font-medium text-gray-900">Tips for great prompts:</h3>
-        <ul className="mt-2 text-sm text-gray-600 list-disc list-inside space-y-1">
+      <div className="bg-muted p-4 rounded-md">
+        <h3 className="text-sm font-medium text-foreground">Tips for great prompts:</h3>
+        <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside space-y-1">
           <li>Be specific about the quiz topic and target audience</li>
           <li>Mention the difficulty level you want (e.g., beginner, intermediate, expert)</li>
           <li>Specify the number of questions if you have a preference</li>
@@ -96,10 +96,10 @@ export function GenerationForm({ onSubmit, isLoading, error = null, initialValue
       <div>
         <button
           type="submit"
-          className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+          className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium ${
             isValid && !isLoading
-              ? "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              : "bg-blue-400 cursor-not-allowed"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+              : "bg-primary/40 text-primary-foreground/60 cursor-not-allowed"
           }`}
           disabled={!isValid || isLoading}
         >
