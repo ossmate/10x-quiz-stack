@@ -20,7 +20,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
             <li key={`${item.path}-${index}`} className="flex items-center">
               {index > 0 && (
                 <svg
-                  className="mx-2 h-5 w-5 flex-shrink-0 text-gray-400"
+                  className="mx-2 h-5 w-5 flex-shrink-0 text-muted-foreground"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   aria-hidden="true"
@@ -29,11 +29,11 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
                 </svg>
               )}
               {isCurrent ? (
-                <span className="text-sm font-medium text-gray-500" aria-current="page">
+                <span className="text-sm font-medium text-muted-foreground" aria-current="page">
                   {item.label}
                 </span>
               ) : (
-                <a href={item.path} className="text-sm font-medium text-gray-700 hover:text-gray-900 hover:underline">
+                <a href={item.path} className="text-sm font-medium text-foreground hover:text-primary hover:underline">
                   {item.label}
                 </a>
               )}

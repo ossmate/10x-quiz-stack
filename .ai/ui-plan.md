@@ -4,6 +4,18 @@
 
 The UI is structured to provide a streamlined, secure, and responsive experience for QuizStack users. It integrates dedicated authentication, quiz management, and quiz taking interfaces that work in tandem with the backend API. The design emphasizes clear separations between user-created and public content, supports dynamic form-based interactions (including modals and wizards), and ensures robust error handling, accessibility, and state consistency through tools like React Query and custom hooks.
 
+### Theme & Styling
+
+This project uses **Tailwind CSS 4** with a comprehensive theming system that supports both light and dark modes. All components must use semantic color tokens (e.g., `bg-background`, `text-foreground`, `bg-primary`) instead of hardcoded colors (e.g., `bg-gray-50`, `text-blue-600`).
+
+**📖 For detailed theming guidelines, see:** `.claude/docs/tailwind-theming.md`
+
+**Key Principles:**
+- Use semantic tokens for all colors
+- Components automatically adapt to light/dark mode
+- OKLCH color space for perceptual uniformity
+- Current mode: Dark (default), can be toggled by removing `dark` class from `<html>`
+
 ## 2. View List
 
 **Authentication Views**

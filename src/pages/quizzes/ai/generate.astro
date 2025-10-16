@@ -32,11 +32,11 @@ const breadcrumbs: BreadcrumbItem[] = [
   <Breadcrumbs client:load items={breadcrumbs} />
 
   <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">Generate Quiz with AI</h1>
-    <p class="text-gray-600 mt-2">Create a quiz automatically using AI by providing a descriptive prompt</p>
+    <h1 class="text-3xl font-bold text-foreground">Generate Quiz with AI</h1>
+    <p class="text-muted-foreground mt-2">Create a quiz automatically using AI by providing a descriptive prompt</p>
   </div>
 
-  <div class="bg-white rounded-lg shadow-md p-6">
+  <div class="bg-card rounded-lg shadow-md p-6">
     <AIQuizGenerator client:load />
   </div>
 </ManagementLayout>

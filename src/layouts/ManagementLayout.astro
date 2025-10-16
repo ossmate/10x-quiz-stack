@@ -15,7 +15,7 @@ const userProfile = undefined; // Will be populated from middleware/auth
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -23,13 +23,13 @@ const userProfile = undefined; // Will be populated from middleware/auth
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-gray-50">
+  <body class="min-h-screen bg-background text-foreground">
     <HeaderNavigation client:load currentPath={currentPath} userProfile={userProfile} />
 
     <div class="flex">
       {
         showSidebar && (
-          <aside class="hidden lg:block w-64 bg-white border-r min-h-[calc(100vh-4rem)]">
+          <aside class="hidden lg:block w-64 bg-card border-border border-r min-h-[calc(100vh-4rem)]">
             <div class="p-4">
               <slot name="sidebar" />
             </div>

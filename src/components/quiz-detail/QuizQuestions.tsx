@@ -17,7 +17,7 @@ export function QuizQuestions({ questions, showCorrectAnswers, className }: Quiz
 
   return (
     <div className={className}>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Questions</h2>
+      <h2 className="text-2xl font-bold text-foreground mb-6">Questions</h2>
 
       <ol className="space-y-6">
         {sortedQuestions.map((question, index) => (

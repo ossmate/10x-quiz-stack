@@ -17,17 +17,17 @@ const breadcrumbs: BreadcrumbItem[] = [
   <Breadcrumbs client:load items={breadcrumbs} />
 
   <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">Create New Quiz</h1>
-    <p class="text-gray-600 mt-2">Manually create a quiz by adding questions and answers</p>
+    <h1 class="text-3xl font-bold text-foreground">Create New Quiz</h1>
+    <p class="text-muted-foreground mt-2">Manually create a quiz by adding questions and answers</p>
   </div>
 
-  <div class="bg-white rounded-lg shadow-md p-6">
+  <div class="bg-card rounded-lg shadow-md p-6">
     <div class="text-center py-12">
-      <p class="text-gray-500 mb-4">Manual quiz creation form coming soon...</p>
-      <p class="text-sm text-gray-400">For now, you can use the AI Quiz Generator</p>
+      <p class="text-muted-foreground mb-4">Manual quiz creation form coming soon...</p>
+      <p class="text-sm text-muted-foreground">For now, you can use the AI Quiz Generator</p>
       <a
         href="/quizzes/ai/generate"
-        class="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        class="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
       >
         Generate Quiz with AI
       </a>

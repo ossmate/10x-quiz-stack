@@ -49,6 +49,8 @@ When modifying the directory structure, always update this section.
 For detailed guidelines on specific technologies and patterns, refer to:
 
 - `.claude/docs/code-generation-rules.md` - **REQUIRED**: Code generation standards and linting rules
+- `.claude/docs/tailwind-theming.md` - **CRITICAL**: Tailwind theme system and semantic color tokens
+- `.claude/docs/tailwind-quick-reference.md` - Quick reference for Tailwind theme tokens
 - `.claude/docs/astro.md` - Astro-specific guidelines and patterns
 - `.claude/docs/react.md` - React best practices and hooks
 - `.claude/docs/frontend.md` - Frontend styling and accessibility
@@ -56,3 +58,5 @@ For detailed guidelines on specific technologies and patterns, refer to:
 - `.claude/docs/supabase-init.md` - Supabase integration setup
 - `.claude/docs/supabase-migrations.md` - Database migration guidelines
 - `.claude/docs/shadcn-ui.md` - Shadcn/ui component usage
+
+**⚠️ Styling Rule**: NEVER use hardcoded colors (e.g., `bg-gray-50`, `text-blue-600`). Always use semantic tokens (e.g., `bg-background`, `text-foreground`, `bg-primary`). See tailwind-theming.md for details.

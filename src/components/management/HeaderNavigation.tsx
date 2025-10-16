@@ -24,13 +24,13 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
   }, []);
 
   return (
-    <header className="border-b bg-white shadow-sm">
+    <header className="border-b border-border bg-card shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="flex items-center text-xl font-bold text-gray-900">
-              <span className="text-blue-600">10x</span>
+            <a href="/" className="flex items-center text-xl font-bold text-foreground">
+              <span className="text-primary">10x</span>
               <span className="ml-1">Quiz</span>
             </a>
           </div>
@@ -43,8 +43,8 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
                 href={link.path}
                 className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
                   link.isActive
-                    ? "border-blue-500 text-gray-900"
-                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
                 aria-current={link.isActive ? "page" : undefined}
               >
@@ -60,7 +60,7 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
                 <button
                   type="button"
                   onClick={toggleProfileMenu}
-                  className="flex items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex items-center rounded-full bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   id="user-menu-button"
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="true"
@@ -69,7 +69,7 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
                   {userProfile.avatarUrl ? (
                     <img className="h-8 w-8 rounded-full" src={userProfile.avatarUrl} alt={userProfile.username} />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       {userProfile.username.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -89,27 +89,27 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
                     />
 
                     <div
-                      className="absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      className="absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-popover py-1 shadow-lg ring-1 ring-border focus:outline-none"
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className="border-b px-4 py-2">
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="border-b border-border px-4 py-2">
+                        <p className="text-sm font-medium text-popover-foreground">
                           {userProfile.displayName || userProfile.username}
                         </p>
-                        <p className="text-xs text-gray-500">@{userProfile.username}</p>
+                        <p className="text-xs text-muted-foreground">@{userProfile.username}</p>
                       </div>
                       <a
                         href="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground"
                         role="menuitem"
                       >
                         Profile Settings
                       </a>
                       <a
                         href="/api/auth/logout"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground"
                         role="menuitem"
                       >
                         Sign Out
@@ -121,7 +121,7 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
             ) : (
               <a
                 href="/login"
-                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 Sign In
               </a>
@@ -131,14 +131,14 @@ export function HeaderNavigation({ currentPath, userProfile }: HeaderNavigationP
       </div>
 
       {/* Mobile Navigation */}
-      <nav className="border-t md:hidden" aria-label="Mobile navigation">
+      <nav className="border-t border-border md:hidden" aria-label="Mobile navigation">
         <div className="space-y-1 px-2 pb-3 pt-2">
           {navigationLinks.map((link) => (
             <a
               key={link.path}
               href={link.path}
               className={`block rounded-md px-3 py-2 text-base font-medium ${
-                link.isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                link.isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
               aria-current={link.isActive ? "page" : undefined}
             >

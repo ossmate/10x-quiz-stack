@@ -28,8 +28,8 @@ export function QuestionCard({ question, questionNumber, showCorrectAnswers, cla
           <CardTitle>Question {questionNumber}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-900 mb-4">{question.content}</p>
-          <p className="text-yellow-600 text-sm">⚠️ This question has no answer options.</p>
+          <p className="text-foreground mb-4">{question.content}</p>
+          <p className="text-destructive text-sm">⚠️ This question has no answer options.</p>
         </CardContent>
       </Card>
     );
@@ -40,14 +40,14 @@ export function QuestionCard({ question, questionNumber, showCorrectAnswers, cla
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <CardTitle className="flex-1">
-            <span className="text-blue-600 font-bold">Question {questionNumber}</span>
+            <span className="text-primary font-bold">Question {questionNumber}</span>
           </CardTitle>
         </div>
       </CardHeader>
 
       <CardContent>
         {/* Question Content */}
-        <p className="text-gray-900 text-base mb-6">{question.content}</p>
+        <p className="text-foreground text-base mb-6">{question.content}</p>
 
         {/* Answer Options */}
         <OptionsList options={question.options} showCorrectAnswers={showCorrectAnswers} />
@@ -69,10 +69,10 @@ export function QuestionCard({ question, questionNumber, showCorrectAnswers, cla
             {showExplanation && (
               <div
                 id={`explanation-${question.id}`}
-                className="bg-blue-50 border border-blue-200 rounded-md p-4"
+                className="bg-accent/50 border border-border rounded-md p-4"
                 aria-hidden={!showExplanation}
               >
-                <p className="text-sm text-gray-700">{question.explanation}</p>
+                <p className="text-sm text-foreground">{question.explanation}</p>
               </div>
             )}
           </div>
