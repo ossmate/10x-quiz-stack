@@ -1,0 +1,55 @@
+---
+import "../styles/global.css";
+import { HeaderNavigation } from "../components/management/HeaderNavigation";
+
+interface Props {
+  title?: string;
+  showSidebar?: boolean;
+}
+
+const { title = "10x Quiz Stack", showSidebar = false } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+// TODO: Fetch user profile from session/auth
+const userProfile = undefined; // Will be populated from middleware/auth
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50">
+    <HeaderNavigation client:load currentPath={currentPath} userProfile={userProfile} />
+
+    <div class="flex">
+      {
+        showSidebar && (
+          <aside class="hidden lg:block w-64 bg-white border-r min-h-[calc(100vh-4rem)]">
+            <div class="p-4">
+              <slot name="sidebar" />
+            </div>
+          </aside>
+        )
+      }
+
+      <main class="flex-1">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <slot />
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+  }
+</style>

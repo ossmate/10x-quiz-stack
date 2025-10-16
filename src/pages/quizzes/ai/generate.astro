@@ -1,8 +1,8 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
+import ManagementLayout from "../../../layouts/ManagementLayout.astro";
 import { AIQuizGenerator } from "../../../components/quizzes/AIQuizGenerator";
-import type { APIContext } from "astro";
-import { supabaseClient } from "../../../db/supabase.client";
+import { Breadcrumbs } from "../../../components/management/Breadcrumbs";
+import type { BreadcrumbItem } from "../../../types/management.types";
 
 // TESTING: Authentication check disabled for easier development
 // In production, uncomment and use these lines instead:
@@ -18,70 +18,26 @@ if (!session) {
 }
 */
 
-// For testing: Create a mock session
-const session = { user: { id: "test-user-123" } };
-
 // Set prerender to false as this page requires authentication
 export const prerender = false;
+
+// Define breadcrumbs
+const breadcrumbs: BreadcrumbItem[] = [
+  { label: "Home", path: "/" },
+  { label: "Quizzes", path: "/dashboard" },
+  { label: "Generate AI Quiz", path: "/quizzes/ai/generate", isCurrent: true },
+];
 ---
 
-<Layout title="Generate AI Quiz">
-  <div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-      <nav class="flex" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-          <li class="inline-flex items-center">
-            <a href="/" class="text-sm text-gray-500 hover:text-gray-700">Home</a>
-          </li>
-          <li>
-            <div class="flex items-center">
-              <svg
-                class="w-3 h-3 text-gray-400 mx-1"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 6 10"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 9 4-4-4-4"></path>
-              </svg>
-              <a href="/quizzes" class="text-sm text-gray-500 hover:text-gray-700 ml-1 md:ml-2">Quizzes</a>
-            </div>
-          </li>
-          <li aria-current="page">
-            <div class="flex items-center">
-              <svg
-                class="w-3 h-3 text-gray-400 mx-1"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 6 10"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 9 4-4-4-4"></path>
-              </svg>
-              <span class="text-sm text-gray-500 ml-1 md:ml-2">Generate AI Quiz</span>
-            </div>
-          </li>
-        </ol>
-      </nav>
-    </div>
+<ManagementLayout title="Generate AI Quiz">
+  <Breadcrumbs client:load items={breadcrumbs} />
 
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Generate Quiz with AI</h1>
-      <p class="text-gray-600 mt-2">Create a quiz automatically using AI by providing a descriptive prompt</p>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <AIQuizGenerator client:load />
-    </div>
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Generate Quiz with AI</h1>
+    <p class="text-gray-600 mt-2">Create a quiz automatically using AI by providing a descriptive prompt</p>
   </div>
-</Layout>
+
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <AIQuizGenerator client:load />
+  </div>
+</ManagementLayout>
