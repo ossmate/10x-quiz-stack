@@ -128,11 +128,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Create profile entry
-    // Note: This will be done via database trigger or separately
-    // For now, Supabase Auth handles the user creation
-    // The profile can be created via a database trigger on auth.users insert
-    // or via a separate profile creation endpoint
+    // Create profile entry in profiles table
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: data.user.id,
+      username: username,
+    });
+
+    if (profileError) {
+      // Profile creation failed - log error but don't fail registration
+      // User can still log in with email
+      console.error("Profile creation error:", profileError);
+      // Note: In production, you might want to implement cleanup or retry logic
+    }
 
     return new Response(
       JSON.stringify({

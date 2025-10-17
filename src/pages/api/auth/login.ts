@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
+import { createClient } from "@supabase/supabase-js";
 import { loginSchema } from "../../../lib/validation/auth.schema.ts";
 import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
+import type { Database } from "../../../db/database.types.ts";
 
 export const prerender = false;
 
@@ -80,8 +82,37 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         );
       }
 
-      // Get the email associated with this user ID
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profileData.id);
+      // Get the email associated with this user ID using service role client
+      // Create service role client for admin operations
+      const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceRoleKey) {
+        console.error("Service role key not configured");
+        return new Response(
+          JSON.stringify({
+            error: "Configuration Error",
+            message: "Server configuration error",
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      const supabaseAdmin = createClient<Database>(
+        import.meta.env.SUPABASE_URL,
+        serviceRoleKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        }
+      );
+
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
 
       if (userError || !userData.user || !userData.user.email) {
         return new Response(
