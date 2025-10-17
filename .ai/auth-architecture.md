@@ -161,14 +161,14 @@ interface LoginFormProps {
 }
 
 // Form Fields:
-- Email (type="email", required)
+- Email or Username (type="text", required) - accepts both email and username
 - Password (type="password", required)
 - "Remember me" checkbox (optional for future implementation)
 - Submit button
 - Links: "Forgot password?" and "Don't have an account? Register"
 
 // Client-side Validation:
-- Email: Valid email format
+- Email or Username: Valid email format OR valid username format (3-20 chars, alphanumeric + underscore)
 - Password: Minimum 8 characters
 
 // API Endpoint: POST /api/auth/login
@@ -401,9 +401,25 @@ export const usernameSchema = z
   .max(20, "Username must be at most 20 characters")
   .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores");
 
+// Email or Username validation (for login)
+export const emailOrUsernameSchema = z
+  .string()
+  .min(1, "Email or username is required")
+  .refine(
+    (value) => {
+      // Check if it's a valid email OR a valid username
+      const isEmail = z.string().email().safeParse(value).success;
+      const isUsername = /^[a-zA-Z0-9_]{3,20}$/.test(value);
+      return isEmail || isUsername;
+    },
+    {
+      message: "Please enter a valid email or username",
+    }
+  );
+
 // Login schema
 export const loginSchema = z.object({
-  email: emailSchema,
+  emailOrUsername: emailOrUsernameSchema,
   password: z.string().min(1, "Password is required"),
 });
 
@@ -481,13 +497,15 @@ export type ChangePasswordInput = z.infer&lt;typeof changePasswordSchema&gt;;
 
 #### 4.2 Existing User Login Flow
 1. User visits `/auth/login` (or redirected from protected page with `?redirect` param)
-2. Fills out login form
-3. Client validates input
+2. Fills out login form (can use either email or username)
+3. Client validates input (accepts both email and username format)
 4. Submits form → POST `/api/auth/login`
-5. Backend validates credentials with Supabase Auth
-6. Backend sets session cookie
-7. User redirected to original page or home
-8. Middleware validates session on subsequent requests
+5. Backend determines if input is email or username
+6. If username: Backend looks up email from profiles table
+7. Backend validates credentials with Supabase Auth using email
+8. Backend sets session cookie
+9. User redirected to original page or home
+10. Middleware validates session on subsequent requests
 
 #### 4.3 Password Recovery Flow
 1. User visits `/auth/forgot-password`
@@ -618,19 +636,22 @@ export type ChangePasswordInput = z.infer&lt;typeof changePasswordSchema&gt;;
 **Request Body**:
 ```typescript
 {
-  email: string;
+  emailOrUsername: string; // Can be either email or username
   password: string;
 }
 ```
 
 **Validation**:
 - Use `loginSchema` from validation
+- Accepts both email format and username format (3-20 chars, alphanumeric + underscore)
 
 **Process**:
 1. Validate input
-2. Call Supabase `auth.signInWithPassword()`
-3. Set session cookie (handled by Supabase client)
-4. Return user data
+2. Determine if input is email or username (check for @ symbol)
+3. If username: Look up user's email from `profiles` table
+4. Call Supabase `auth.signInWithPassword()` with email
+5. Set session cookie (handled by Supabase client)
+6. Return user data
 
 **Response**:
 ```typescript
@@ -1618,6 +1639,7 @@ EXECUTE FUNCTION update_updated_at_column();
 This authentication architecture provides:
 
 ✅ **Complete authentication flow**: Registration, login, logout
+✅ **Flexible login**: Users can log in with either email or username
 ✅ **Password recovery**: Forgot password and reset functionality
 ✅ **Password management**: Change password for authenticated users
 ✅ **Email verification**: Supabase-handled email confirmation

@@ -13,7 +13,7 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginInput>({
-    email: "",
+    emailOrUsername: "",
     password: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
@@ -104,23 +104,23 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-foreground">
-            Email
+          <Label htmlFor="emailOrUsername" className="text-foreground">
+            Email or Username
           </Label>
           <Input
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
+            id="emailOrUsername"
+            type="text"
+            placeholder="your@email.com or username"
+            value={formData.emailOrUsername}
+            onChange={(e) => handleInputChange("emailOrUsername", e.target.value)}
             className={`bg-background text-foreground border-input focus:border-primary ${
-              errors.email ? "border-destructive" : ""
+              errors.emailOrUsername ? "border-destructive" : ""
             }`}
             disabled={isLoading}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? "email-error" : undefined}
+            aria-invalid={!!errors.emailOrUsername}
+            aria-describedby={errors.emailOrUsername ? "emailOrUsername-error" : undefined}
           />
-          {errors.email && <FormFieldError error={errors.email} />}
+          {errors.emailOrUsername && <FormFieldError error={errors.emailOrUsername} />}
         </div>
 
         <div className="space-y-2">

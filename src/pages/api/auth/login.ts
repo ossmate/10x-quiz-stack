@@ -6,9 +6,9 @@ export const prerender = false;
 
 /**
  * POST /api/auth/login
- * Authenticates a user with email and password
+ * Authenticates a user with email/username and password
  *
- * @body { email: string, password: string }
+ * @body { emailOrUsername: string, password: string }
  * @returns 200 OK - Login successful
  * @returns 400 Bad Request - Validation error
  * @returns 401 Unauthorized - Invalid credentials
@@ -44,13 +44,62 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    const { email, password } = validationResult.data;
+    const { emailOrUsername, password } = validationResult.data;
 
     // Create Supabase server instance
     const supabase = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
+
+    // Determine if input is email or username
+    let email = emailOrUsername;
+    const isEmail = emailOrUsername.includes("@");
+
+    // If it's a username, look up the email from profiles table
+    if (!isEmail) {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", emailOrUsername)
+        .single();
+
+      if (profileError || !profileData) {
+        // Don't reveal if username exists - return generic error
+        return new Response(
+          JSON.stringify({
+            error: "Authentication Failed",
+            message: "Invalid email or password",
+          }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      // Get the email associated with this user ID
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profileData.id);
+
+      if (userError || !userData.user || !userData.user.email) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication Failed",
+            message: "Invalid email or password",
+          }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      email = userData.user.email;
+    }
 
     // Sign in with email and password
     const { data, error } = await supabase.auth.signInWithPassword({
