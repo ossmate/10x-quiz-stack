@@ -60,8 +60,30 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // If it's a username, look up the email from profiles table
     if (!isEmail) {
+      // Query profiles table - public read access enabled via RLS policy
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", emailOrUsername)
+        .single();
 
-      // Create service role client for profile lookup (bypasses RLS)
+      if (profileError || !profileData) {
+        // Don't reveal if username exists - return generic error
+        return new Response(
+          JSON.stringify({
+            error: "Authentication Failed",
+            message: "Invalid email or password",
+          }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      // Create service role client only for admin.getUserById (still needed)
       const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!serviceRoleKey) {
         console.error("Service role key not configured");
@@ -90,30 +112,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       );
 
-      // Use admin client to bypass RLS and lookup username
-      const { data: profileData, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("username", emailOrUsername)
-        .single();
-
-      if (profileError || !profileData) {
-        // Don't reveal if username exists - return generic error
-        return new Response(
-          JSON.stringify({
-            error: "Authentication Failed",
-            message: "Invalid email or password",
-          }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      // Get the email associated with this user ID
+      // Get the email associated with this user ID (requires admin API)
       const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
 
       if (userError || !userData.user || !userData.user.email) {

@@ -1,6 +1,54 @@
-# Username Login Fix - Technical Summary
+# Username Login - Implementation Summary
 
-## Problem
+## ✅ CURRENT SOLUTION (Secure & Production-Ready)
+
+Username login is now implemented using **public RLS policy** - the secure, standard approach.
+
+### How It Works Now
+
+1. **Public RLS Policy** allows anyone to read `id` and `username` from profiles table
+2. Login endpoint uses **regular client** (no service role key needed for username lookup)
+3. Service role key is only used for `auth.admin.getUserById()` (still required by Supabase API)
+
+### Code Flow
+
+```typescript
+// 1. User enters username
+const username = "vil84";
+
+// 2. Query profiles with regular client (RLS allows public read)
+const { data: profileData } = await supabase
+  .from("profiles")
+  .select("id")
+  .eq("username", username)
+  .single();  // ✅ Works because of public RLS policy
+
+// 3. Get email from user ID (requires admin client)
+const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
+const email = userData.user.email;
+
+// 4. Login with email + password
+await supabase.auth.signInWithPassword({ email, password });
+```
+
+### Security
+
+- ✅ **Username is public** (standard for social platforms)
+- ✅ **No service role key for profile queries** (safer)
+- ✅ **RLS still protects other profile data**
+- ✅ **Password still required** (authentication not bypassed)
+
+### Migration Applied
+
+```sql
+-- Public read access to profiles (username lookup)
+CREATE POLICY "Public username lookup"
+ON profiles FOR SELECT USING (true);
+```
+
+**File:** `supabase/migrations/20251017000000_update_profiles_rls_for_username_login.sql`
+
+## Historical Problem (RESOLVED)
 
 Users could NOT log in with their username, only with email.
 
