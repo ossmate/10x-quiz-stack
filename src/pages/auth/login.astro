@@ -1,0 +1,18 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { LoginForm } from "../../components/auth/LoginForm";
+
+// Get redirect parameter from URL
+const redirectTo = Astro.url.searchParams.get("redirect") || undefined;
+
+// TODO: Check if user is already authenticated
+// If authenticated, redirect to home page
+// const session = Astro.locals.session;
+// if (session) {
+//   return Astro.redirect("/");
+// }
+---
+
+<Layout title="Login - 10x Quiz Stack">
+  <LoginForm client:load redirectTo={redirectTo} />
+</Layout>

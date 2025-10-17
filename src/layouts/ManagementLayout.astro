@@ -9,9 +9,6 @@ interface Props {
 
 const { title = "10x Quiz Stack", showSidebar = false } = Astro.props;
 const currentPath = Astro.url.pathname;
-
-// TODO: Fetch user profile from session/auth
-const userProfile = undefined; // Will be populated from middleware/auth
 ---
 
 <!doctype html>
@@ -24,7 +21,7 @@ const userProfile = undefined; // Will be populated from middleware/auth
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-background text-foreground">
-    <HeaderNavigation client:load currentPath={currentPath} userProfile={userProfile} />
+    <HeaderNavigation client:load currentPath={currentPath} />
 
     <div class="flex">
       {

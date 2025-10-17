@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { RegistrationForm } from "../../components/auth/RegistrationForm";
+
+// TODO: Check if user is already authenticated
+// If authenticated, redirect to home page
+// const session = Astro.locals.session;
+// if (session) {
+//   return Astro.redirect("/");
+// }
+---
+
+<Layout title="Register - 10x Quiz Stack">
+  <RegistrationForm client:load />
+</Layout>
