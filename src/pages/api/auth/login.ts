@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { emailOrUsername, password } = validationResult.data;
 
-    // Create Supabase server instance
+    // Create Supabase server instance for authentication
     const supabase = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
@@ -60,30 +60,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // If it's a username, look up the email from profiles table
     if (!isEmail) {
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", emailOrUsername)
-        .single();
 
-      if (profileError || !profileData) {
-        // Don't reveal if username exists - return generic error
-        return new Response(
-          JSON.stringify({
-            error: "Authentication Failed",
-            message: "Invalid email or password",
-          }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      // Get the email associated with this user ID using service role client
-      // Create service role client for admin operations
+      // Create service role client for profile lookup (bypasses RLS)
       const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!serviceRoleKey) {
         console.error("Service role key not configured");
@@ -112,6 +90,30 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       );
 
+      // Use admin client to bypass RLS and lookup username
+      const { data: profileData, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("username", emailOrUsername)
+        .single();
+
+      if (profileError || !profileData) {
+        // Don't reveal if username exists - return generic error
+        return new Response(
+          JSON.stringify({
+            error: "Authentication Failed",
+            message: "Invalid email or password",
+          }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      // Get the email associated with this user ID
       const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
 
       if (userError || !userData.user || !userData.user.email) {
