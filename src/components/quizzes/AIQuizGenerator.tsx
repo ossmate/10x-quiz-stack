@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { GenerationForm } from "./GenerationForm";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { QuizPreview } from "./QuizPreview";
@@ -13,6 +14,33 @@ import type { QuizDetailDTO, AIQuizGenerationDTO, QuizUpdateDTO } from "../../ty
 export function AIQuizGenerator() {
   // Use our custom hooks for state management
   const { state, generateQuiz, resetGeneration, toggleEdit, updateGeneratedQuiz, publishQuiz } = useAIQuizGeneration();
+
+  // State to track if footer should be sticky
+  const [isFooterSticky, setIsFooterSticky] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Setup IntersectionObserver to detect when user reaches the bottom
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When sentinel is visible, footer should not be sticky
+        setIsFooterSticky(!entry.isIntersecting);
+      },
+      {
+        // Trigger when sentinel is 100px from viewport
+        rootMargin: "100px",
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [state.status, state.isEditing]);
 
   // Create a dummy quiz for when we don't have a real quiz to edit
   // This ensures we always call the useEditableQuiz hook per React's rules
@@ -55,15 +83,28 @@ export function AIQuizGenerator() {
     const fullQuiz = updatedQuiz as unknown as QuizDetailDTO;
     updateGeneratedQuiz(fullQuiz);
 
-    // In a real implementation, this would publish the quiz
+    // Publish the quiz and handle redirect
     try {
       const result = await publishQuiz(fullQuiz);
-      if (result.success) {
-        // Redirect to quiz detail page in production
-        // window.location.href = `/quizzes/${result.quizId}`;
+      if (result.success && result.redirectUrl) {
+        // Show success notification
+        toast.success("Quiz published successfully!", {
+          description: "Redirecting to your quiz...",
+          duration: 3000,
+        });
+
+        // Redirect to quiz detail page after database commit delay
+        // Wait 2.5 seconds to ensure database transaction is fully committed
+        setTimeout(() => {
+          window.location.href = result.redirectUrl;
+        }, 2500);
       }
-    } catch {
-      // Error is handled silently
+    } catch (error) {
+      // Show error notification
+      const errorMessage = error instanceof Error ? error.message : "Failed to publish the quiz";
+      toast.error("Failed to publish quiz", {
+        description: errorMessage,
+      });
     }
   };
 
@@ -132,22 +173,49 @@ export function AIQuizGenerator() {
 
       {/* Completed State (Preview Mode) - Show Quiz Preview with Actions */}
       {state.status === "completed" && !state.isEditing && state.generatedQuiz && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-            <h2 className="text-lg font-medium text-foreground">Generated Quiz Preview</h2>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent-foreground">
-              AI Generated
-            </span>
+        <>
+          <div className={`space-y-6 ${isFooterSticky ? "pb-24" : ""}`}>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+              <h2 className="text-lg font-medium text-foreground">Generated Quiz Preview</h2>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent-foreground">
+                AI Generated
+              </span>
+            </div>
+
+            <QuizPreview quiz={state.generatedQuiz} showCorrectAnswers={true} />
+
+            {/* Sentinel element to detect bottom of content */}
+            <div ref={sentinelRef} className="h-1" />
           </div>
 
-          <QuizPreview
-            quiz={state.generatedQuiz}
-            showCorrectAnswers={true}
-            actions={
-              <div className="flex flex-wrap gap-3 mt-4">
+          {/* Footer with Actions - sticky when scrolling, static at bottom */}
+          <div
+            className={`${
+              isFooterSticky ? "fixed bottom-0 left-0 right-0 shadow-lg" : "relative"
+            } bg-card border-t border-border z-10 transition-all duration-200`}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  onClick={handleReset}
+                  disabled={state.isPublishing}
+                  className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Generate Another
+                </button>
                 <button
                   onClick={handleToggleEdit}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
+                  disabled={state.isPublishing}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg
                     className="w-4 h-4 mr-1"
@@ -167,38 +235,52 @@ export function AIQuizGenerator() {
                 </button>
                 <button
                   onClick={() => state.generatedQuiz && handleSaveQuiz(state.generatedQuiz)}
-                  className="px-4 py-2 bg-accent text-accent-foreground rounded-md hover:bg-accent/90 flex items-center"
+                  disabled={state.isPublishing}
+                  className="px-4 py-2 bg-accent text-accent-foreground rounded-md hover:bg-accent/90 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Publish Quiz
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10 flex items-center"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Generate Another
+                  {state.isPublishing ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-1 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Publish Quiz
+                    </>
+                  )}
                 </button>
               </div>
-            }
-          />
-        </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Editing State - Show Editable Quiz Content */}
@@ -215,6 +297,7 @@ export function AIQuizGenerator() {
             onCancel={() => handleToggleEdit()}
             saveButtonText="Save & Publish"
             cancelButtonText="Cancel Edits"
+            isPublishing={state.isPublishing}
           />
         </div>
       )}

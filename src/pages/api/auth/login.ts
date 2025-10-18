@@ -101,16 +101,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         );
       }
 
-      const supabaseAdmin = createClient<Database>(
-        import.meta.env.SUPABASE_URL,
-        serviceRoleKey,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        }
-      );
+      const supabaseAdmin = createClient<Database>(import.meta.env.SUPABASE_URL, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
 
       // Get the email associated with this user ID (requires admin API)
       const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profileData.id);

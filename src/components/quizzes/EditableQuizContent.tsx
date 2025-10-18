@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { QuizDetailDTO, QuestionWithOptionsDTO, OptionDTO, QuizUpdateDTO } from "../../types";
 
 // Interface for component props
@@ -9,6 +9,7 @@ interface EditableQuizContentProps {
   saveButtonText?: string;
   cancelButtonText?: string;
   className?: string;
+  isPublishing?: boolean;
 }
 
 // Interface for editable quiz state with validation
@@ -39,6 +40,7 @@ export function EditableQuizContent({
   saveButtonText = "Save Changes",
   cancelButtonText = "Cancel",
   className = "",
+  isPublishing = false,
 }: EditableQuizContentProps) {
   // Initialize editable quiz state with the provided quiz
   const [editableQuiz, setEditableQuiz] = useState<EditableQuizData>(() => ({
@@ -49,6 +51,33 @@ export function EditableQuizContent({
 
   // State for tracking overall form validity
   const [isValid, setIsValid] = useState(true);
+
+  // State to track if footer should be sticky
+  const [isFooterSticky, setIsFooterSticky] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Setup IntersectionObserver to detect when user reaches the bottom
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When sentinel is visible, footer should not be sticky
+        setIsFooterSticky(!entry.isIntersecting);
+      },
+      {
+        // Trigger when sentinel is 100px from viewport
+        rootMargin: "100px",
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Validate quiz on any changes
   useEffect(() => {
@@ -283,7 +312,7 @@ export function EditableQuizContent({
   };
 
   return (
-    <div className={`space-y-8 ${className}`}>
+    <div className={`space-y-8 ${isFooterSticky ? "pb-24" : ""} ${className}`}>
       <div className="space-y-6">
         {/* Quiz Metadata Section */}
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
@@ -484,29 +513,67 @@ export function EditableQuizContent({
             )}
           </div>
         </div>
+
+        {/* Sentinel element to detect bottom of content */}
+        <div ref={sentinelRef} className="h-1" />
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-4 pt-4 border-t border-border">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10"
-        >
-          {cancelButtonText}
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!isValid || !editableQuiz.isDirty}
-          className={`px-4 py-2 rounded-md ${
-            isValid && editableQuiz.isDirty
-              ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-              : "bg-primary/40 text-primary-foreground/60 cursor-not-allowed"
-          }`}
-        >
-          {saveButtonText}
-        </button>
+      {/* Footer with Action Buttons - sticky when scrolling, static at bottom */}
+      <div
+        className={`${
+          isFooterSticky ? "fixed bottom-0 left-0 right-0 shadow-lg" : "relative"
+        } bg-card border-t border-border z-10 transition-all duration-200`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPublishing}
+              className="px-4 py-2 border border-border text-foreground rounded-md hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {cancelButtonText}
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isValid || !editableQuiz.isDirty || isPublishing}
+              className={`px-4 py-2 rounded-md flex items-center ${
+                isValid && editableQuiz.isDirty && !isPublishing
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                  : "bg-primary/40 text-primary-foreground/60 cursor-not-allowed"
+              }`}
+            >
+              {isPublishing ? (
+                <>
+                  <svg
+                    className="w-4 h-4 mr-2 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Publishing...
+                </>
+              ) : (
+                saveButtonText
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

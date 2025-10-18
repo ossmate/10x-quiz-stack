@@ -23,17 +23,20 @@ if (!id) {
   return Astro.redirect("/");
 }
 
-// Fetch quiz title for breadcrumbs
-let quizTitle = "Loading...";
+// Fetch quiz title for breadcrumbs using Supabase client from locals
+let quizTitle = "Quiz";
 try {
-  const response = await fetch(`${Astro.url.origin}/api/quizzes/${id}`);
-  if (response.ok) {
-    const quizData = await response.json();
-    quizTitle = quizData.title || "Quiz";
+  const supabase = Astro.locals.supabase;
+  if (supabase) {
+    const { data: quizData } = await supabase.from("quizzes").select("title").eq("id", id).single();
+
+    if (quizData?.title) {
+      quizTitle = quizData.title;
+    }
   }
-} catch {
+} catch (error) {
   // If fetch fails, we'll show "Quiz" as fallback
-  quizTitle = "Quiz";
+  console.error("Failed to fetch quiz title for breadcrumbs:", error);
 }
 
 // Define breadcrumbs

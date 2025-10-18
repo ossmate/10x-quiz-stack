@@ -215,6 +215,7 @@ export interface GenerationState {
   generatedQuiz: QuizDetailDTO | null;
   error: string | null;
   isEditing: boolean;
+  isPublishing: boolean;
 }
 
 // Editable Quiz Data for forms

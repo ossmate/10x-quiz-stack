@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import { AuthButtons } from "../components/auth/AuthButtons";
+import { Toaster } from "../components/ui/sonner";
 
 interface Props {
   title?: string;
@@ -45,6 +46,7 @@ const currentPath = Astro.url.pathname;
     }
 
     <slot />
+    <Toaster client:load />
   </body>
 </html>
 

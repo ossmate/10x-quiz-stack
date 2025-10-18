@@ -14,6 +14,7 @@ export function useAIQuizGeneration() {
     generatedQuiz: null,
     error: null,
     isEditing: false,
+    isPublishing: false,
   });
 
   /**
@@ -59,6 +60,7 @@ export function useAIQuizGeneration() {
       generatedQuiz: null,
       error: null,
       isEditing: false,
+      isPublishing: false,
     });
   }, []);
 
@@ -97,6 +99,12 @@ export function useAIQuizGeneration() {
       throw new Error("Quiz must have at least one question");
     }
 
+    // Set publishing state
+    setState((prev) => ({
+      ...prev,
+      isPublishing: true,
+    }));
+
     try {
       const response = await fetch("/api/quizzes", {
         method: "POST",
@@ -133,8 +141,14 @@ export function useAIQuizGeneration() {
       return {
         success: true,
         quizId: savedQuiz.id,
+        redirectUrl: savedQuiz.redirectUrl,
       };
     } catch (error) {
+      // Reset publishing state on error
+      setState((prev) => ({
+        ...prev,
+        isPublishing: false,
+      }));
       const message = error instanceof Error ? error.message : "Failed to publish the quiz";
       throw new Error(message);
     }

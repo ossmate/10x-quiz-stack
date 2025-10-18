@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { quizService } from "../../../lib/services/quiz.service.ts";
 import { uuidSchema } from "../../../lib/validation/uuid.schema.ts";
 import { quizCreateSchema } from "../../../lib/validation/quiz-create.schema.ts";
-import { getDefaultUserId } from "../../../lib/utils/auth.ts";
+import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 import type { Database } from "../../../db/database.types.ts";
 
@@ -20,7 +20,7 @@ export const prerender = false;
  * @returns 404 Not Found - Quiz not found or user lacks access
  * @returns 500 Internal Server Error - Database or unexpected error
  */
-export const GET: APIRoute = async ({ params, locals }) => {
+export const GET: APIRoute = async ({ params, cookies, request }) => {
   try {
     // Step 1: Extract quiz ID from path parameters
     const quizId = params.id;
@@ -58,12 +58,37 @@ export const GET: APIRoute = async ({ params, locals }) => {
       );
     }
 
-    // Step 3: Setup Supabase client
+    // Step 3: Setup Supabase clients
     const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = import.meta.env.SUPABASE_URL;
-    let supabaseClient = locals.supabase;
 
-    // Check if Supabase URL is available
+    // Create SSR-compatible client for authentication
+    const authClient = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Step 4: Check authentication using SSR client
+    const {
+      data: { session },
+    } = await authClient.auth.getSession();
+    if (!session) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication is required",
+        }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    const userId = session.user.id;
+
+    // Setup service role client for database operations (bypasses RLS)
     if (!supabaseUrl) {
       return new Response(
         JSON.stringify({
@@ -79,7 +104,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       );
     }
 
-    // Use service role key if available to bypass RLS
+    let supabaseClient = authClient;
     if (serviceRoleKey) {
       try {
         supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
@@ -106,33 +131,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       }
     }
 
-    // TESTING: Authentication check disabled for easier development
-    // In production, uncomment and use these lines instead:
-    /*
-    const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    if (!session) {
-      return new Response(
-        JSON.stringify({
-          error: "Unauthorized",
-          message: "Authentication is required",
-        }),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-    const userId = session.user.id;
-    */
-
-    // For testing: Use the default user ID from environment
-    const userId = getDefaultUserId();
-
-    // Step 4: Fetch quiz using the service
+    // Step 5: Fetch quiz using the service
     let quiz;
     try {
       quiz = await quizService.getQuizById(supabaseClient, validationResult.data, userId);
@@ -162,7 +161,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       );
     }
 
-    // Step 5: Check if quiz was found and user has access
+    // Step 6: Check if quiz was found and user has access
     if (!quiz) {
       return new Response(
         JSON.stringify({
@@ -178,7 +177,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       );
     }
 
-    // Step 6: Return quiz with 200 status
+    // Step 7: Return quiz with 200 status
     return new Response(JSON.stringify(quiz), {
       status: 200,
       headers: {
