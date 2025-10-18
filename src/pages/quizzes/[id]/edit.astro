@@ -1,0 +1,80 @@
+---
+import ManagementLayout from "../../../layouts/ManagementLayout.astro";
+import { QuizEditor } from "../../../components/quizzes/QuizEditor";
+import { Breadcrumbs } from "../../../components/management/Breadcrumbs";
+import type { BreadcrumbItem } from "../../../types/management.types";
+import type { QuizDetailDTO } from "../../../types";
+
+// Set prerender to false as this page requires authentication
+export const prerender = false;
+
+// Extract quiz ID from route parameters
+const { id } = Astro.params;
+
+// Ensure quiz ID exists
+if (!id) {
+  return Astro.redirect("/");
+}
+
+// Get current user from session (set by middleware)
+const user = Astro.locals.user;
+
+// Middleware should handle authentication, but double-check
+if (!user) {
+  return Astro.redirect(`/auth/login?redirect=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+// Fetch quiz data server-side
+let quiz: QuizDetailDTO | null = null;
+let error: string | null = null;
+
+try {
+  const response = await fetch(`${Astro.url.origin}/api/quizzes/${id}`, {
+    headers: {
+      Cookie: Astro.request.headers.get("Cookie") || "",
+    },
+  });
+
+  if (response.ok) {
+    quiz = await response.json();
+
+    // Check ownership - only quiz owner can edit
+    if (quiz && quiz.user_id !== user.id) {
+      return new Response(null, {
+        status: 403,
+        statusText: "Forbidden",
+      });
+    }
+  } else if (response.status === 404) {
+    error = "Quiz not found";
+  } else {
+    error = "Failed to load quiz";
+  }
+} catch (err) {
+  console.error("Failed to fetch quiz for editing:", err);
+  error = "Failed to load quiz";
+}
+
+// If error or no quiz, show error page
+if (error || !quiz) {
+  return Astro.redirect("/");
+}
+
+// Define breadcrumbs
+const breadcrumbs: BreadcrumbItem[] = [
+  { label: "Dashboard", path: "/" },
+  { label: quiz.title, path: `/quizzes/${id}` },
+  { label: "Edit", path: `/quizzes/${id}/edit`, isCurrent: true },
+];
+---
+
+<ManagementLayout title={`Edit ${quiz.title} | QuizStack`}>
+  <Breadcrumbs client:load items={breadcrumbs} />
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-foreground">Edit Quiz</h1>
+    <p class="text-muted-foreground mt-2">Make changes to your quiz and save them</p>
+  </div>
+
+  <QuizEditor client:load quiz={quiz} />
+</ManagementLayout>

@@ -6,30 +6,12 @@ import { createSupabaseServerInstance, supabaseClient } from "../db/supabase.cli
 import type { Database } from "../db/database.types.ts";
 
 /**
- * Public paths - accessible without authentication
- * These include auth pages and public API endpoints
- */
-const PUBLIC_PATHS = [
-  // Public pages
-  "/",
-  "/auth/login",
-  "/auth/register",
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  "/auth/verify-email",
-  // Auth API endpoints
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/logout",
-  "/api/auth/session",
-];
-
-/**
  * Protected routes - require authentication
  */
 const PROTECTED_ROUTES = [
   "/quizzes/new",
   "/quizzes/ai/generate",
+  "/quizzes/*/edit",
   "/auth/change-password",
   // Add more protected routes here
 ];
