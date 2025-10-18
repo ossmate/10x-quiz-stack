@@ -72,8 +72,8 @@ This project uses **Tailwind CSS 4** with a comprehensive theming system that su
 - **Path:** `/quizzes/ai/generate`
 - **Main Purpose:** Enable users to generate a new quiz based on a prompt using AI.
 - **Key Information:** Input for quiz generation prompt; display of generated quiz preview (not saved to database); comprehensive editing capabilities before final publication.
-- **Key Components:** AI generation form, preview panel with editable quiz content, loading indicators for generation process, save/publish buttons for final creation.
-- **Considerations:** Clear instructions for prompt input, error states capture if AI generation fails, secure API interactions, seamless transition between preview and editing states.
+- **Key Components:** AI generation form, preview panel with editable quiz content, loading indicators for generation process, sticky footer with action buttons that intelligently transitions between fixed and static positioning, toast notifications for success/error feedback, disabled button states during publishing.
+- **Considerations:** Clear instructions for prompt input, error states capture if AI generation fails, secure API interactions, seamless transition between preview and editing states, real-time user feedback through loading spinners and toast messages, intelligent footer positioning using IntersectionObserver to prevent double-clicks and improve UX.
 
 ## 3. User Journey Map
 
@@ -113,5 +113,11 @@ This project uses **Tailwind CSS 4** with a comprehensive theming system that su
   - Components for rendering questions, options, progress indicators, and response submission.
 - **Custom Hooks and State Management:**
   - Encapsulate API interactions, optimistic UI updates, and caching using React Query, ensuring data consistency and improved performance.
+- **Toast Notifications:**
+  - Global toast notification system using Sonner for real-time feedback on user actions (quiz published, errors, etc.).
+- **Loading States:**
+  - Comprehensive loading indicators with disabled button states, spinner animations, and loading text to prevent duplicate actions during async operations.
+- **Intelligent UI Components:**
+  - Sticky footer with IntersectionObserver-based positioning that transitions between fixed and static states based on scroll position, improving navigation while preventing content overlap.
 - **Accessibility Enhancements:**
-  - All components adhere to ARIA guidelines with semantic HTML, keyboard-navigable interfaces, and responsive design principles.
+  - All components adhere to ARIA guidelines with semantic HTML, keyboard-navigable interfaces, responsive design principles, and proper disabled states for async operations.
