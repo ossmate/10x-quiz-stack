@@ -204,7 +204,7 @@ export function EditableQuizContent({
   };
 
   // Update an option
-  const updateOption = (questionId: string, optionId: string, field: string, value: any) => {
+  const updateOption = (questionId: string, optionId: string, field: string, value: string | boolean) => {
     setEditableQuiz((prev) => ({
       ...prev,
       questions:
@@ -222,13 +222,13 @@ export function EditableQuizContent({
 
   // Add a new question
   const addQuestion = () => {
-    // Generate a temporary ID for the new question
-    const newQuestionId = `new-question-${Date.now()}`;
+    // Generate a temporary ID for the new question using UUID
+    const newQuestionId = `new-question-${crypto.randomUUID()}`;
 
-    // Create default options
+    // Create default options with unique IDs
     const defaultOptions: OptionDTO[] = [
       {
-        id: `new-option-${Date.now()}-1`,
+        id: `new-option-${crypto.randomUUID()}`,
         question_id: newQuestionId,
         content: "Option 1",
         is_correct: true,
@@ -236,7 +236,7 @@ export function EditableQuizContent({
         created_at: new Date().toISOString(),
       },
       {
-        id: `new-option-${Date.now()}-2`,
+        id: `new-option-${crypto.randomUUID()}`,
         question_id: newQuestionId,
         content: "Option 2",
         is_correct: false,
@@ -279,9 +279,9 @@ export function EditableQuizContent({
     const question = editableQuiz.questions?.find((q) => q.id === questionId);
     if (!question) return;
 
-    // Create new option
+    // Create new option with unique UUID
     const newOption: OptionDTO = {
-      id: `new-option-${Date.now()}`,
+      id: `new-option-${crypto.randomUUID()}`,
       question_id: questionId,
       content: "New option",
       is_correct: false,

@@ -1,4 +1,5 @@
-import type { QuizDetailDTO, QuizGenerationRequest } from "../../types";
+import type { QuizDetailDTO, QuizGenerationRequest, AIGeneratedQuizPreview } from "../../types";
+import { convertAIPreviewToQuizDetail } from "../utils/quiz-conversion";
 
 /**
  * Client-side wrapper for the AI Quiz Generator Service
@@ -38,8 +39,11 @@ export class AIQuizClientService {
         throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
-      // Parse response
-      const quiz = (await response.json()) as QuizDetailDTO;
+      // Parse response as AI-generated quiz preview
+      const quizPreview = (await response.json()) as AIGeneratedQuizPreview;
+
+      // Convert preview to QuizDetailDTO with unique IDs
+      const quiz = convertAIPreviewToQuizDetail(quizPreview);
 
       // Validate quiz data
       this.validateQuizResponse(quiz);
