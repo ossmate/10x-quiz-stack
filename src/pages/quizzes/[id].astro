@@ -14,9 +14,9 @@ const { id } = Astro.params;
 // If user is not authenticated, they will be redirected to /login
 // The quiz ID will be passed to the React component for validation
 
-// Get current user ID from session (set by middleware)
-const session = Astro.locals.session;
-const currentUserId = session?.userId;
+// Get current user ID from locals (set by middleware)
+const user = Astro.locals.user;
+const currentUserId = user?.id;
 
 // Ensure quiz ID exists
 if (!id) {
