@@ -10,7 +10,6 @@ interface QuizHeaderProps {
   onStartQuiz: () => void;
   onPublish: () => Promise<void>;
   onUnpublish: () => Promise<void>;
-  onVisibilityChange: (newStatus: "public" | "private") => Promise<void>;
 }
 
 /**
@@ -25,7 +24,6 @@ export function QuizHeader({
   onStartQuiz,
   onPublish,
   onUnpublish,
-  onVisibilityChange,
 }: QuizHeaderProps) {
   return (
     <header className="border-b border-border pb-6">
@@ -47,7 +45,6 @@ export function QuizHeader({
         onStartQuiz={onStartQuiz}
         onPublish={onPublish}
         onUnpublish={onUnpublish}
-        onVisibilityChange={onVisibilityChange}
       />
     </header>
   );

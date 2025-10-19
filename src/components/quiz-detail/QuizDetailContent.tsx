@@ -11,7 +11,6 @@ interface QuizDetailContentProps {
   onStartQuiz: () => void;
   onPublish: () => Promise<void>;
   onUnpublish: () => Promise<void>;
-  onVisibilityChange: (newStatus: "public" | "private") => Promise<void>;
   showDeleteDialog: boolean;
   onDeleteConfirm: () => Promise<void>;
   onDeleteCancel: () => void;
@@ -32,7 +31,6 @@ export function QuizDetailContent({
   onStartQuiz,
   onPublish,
   onUnpublish,
-  onVisibilityChange,
   showDeleteDialog,
   onDeleteConfirm,
   onDeleteCancel,
@@ -54,7 +52,6 @@ export function QuizDetailContent({
           onStartQuiz={onStartQuiz}
           onPublish={onPublish}
           onUnpublish={onUnpublish}
-          onVisibilityChange={onVisibilityChange}
         />
 
         {/* Questions Section */}

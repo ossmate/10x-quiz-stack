@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import type { QuizDetailDTO } from "../../types";
 import { PublishQuizButton } from "./PublishQuizButton";
 import { UnpublishQuizButton } from "./UnpublishQuizButton";
-import { QuizVisibilityToggle } from "./QuizVisibilityToggle";
 
 interface QuizActionsProps {
   quiz: QuizDetailDTO;
@@ -12,7 +11,6 @@ interface QuizActionsProps {
   onStartQuiz: () => void;
   onPublish: () => Promise<void>;
   onUnpublish: () => Promise<void>;
-  onVisibilityChange: (newStatus: "public" | "private") => Promise<void>;
 }
 
 /**
@@ -27,9 +25,8 @@ export function QuizActions({
   onStartQuiz,
   onPublish,
   onUnpublish,
-  onVisibilityChange,
 }: QuizActionsProps) {
-  const isPublished = quiz.status === "public" || quiz.status === "private";
+  const isPublished = quiz.status === "public";
   const isDraft = quiz.status === "draft";
 
   return (
@@ -47,9 +44,6 @@ export function QuizActions({
 
           {/* Unpublish Button - Only for published quizzes */}
           {isPublished && <UnpublishQuizButton quiz={quiz} onUnpublish={onUnpublish} />}
-
-          {/* Visibility Toggle - Only for published quizzes */}
-          {isPublished && <QuizVisibilityToggle quiz={quiz} onVisibilityChange={onVisibilityChange} />}
 
           {/* Edit Button - Only enabled for draft quizzes */}
           <Button

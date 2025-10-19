@@ -897,60 +897,6 @@ export class QuizService {
   }
 
   /**
-   * Toggle quiz visibility between public and private
-   * Only works for published quizzes (status public or private)
-   *
-   * @param supabase - Supabase client instance
-   * @param quizId - Quiz ID to update
-   * @param userId - User requesting the operation
-   * @param newStatus - New status ('public' or 'private')
-   * @returns Updated quiz detail DTO
-   * @throws Error if quiz not found, user lacks permission, or invalid transition
-   */
-  async updateQuizVisibility(
-    supabase: SupabaseClientType,
-    quizId: string,
-    userId: string,
-    newStatus: "public" | "private"
-  ): Promise<QuizDetailDTO> {
-    // Step 1: Fetch quiz to check ownership and current status
-    const quiz = await this.getQuizById(supabase, quizId, userId);
-
-    if (!quiz) {
-      throw new Error("Quiz not found");
-    }
-
-    // Step 2: Check ownership
-    if (quiz.user_id !== userId) {
-      throw new Error("Forbidden");
-    }
-
-    // Step 3: Validate transition (can only toggle between public and private)
-    if (quiz.status !== "public" && quiz.status !== "private") {
-      throw new Error(`Cannot change visibility of quiz with status "${quiz.status}". Only published quizzes can have their visibility changed.`);
-    }
-
-    if (newStatus !== "public" && newStatus !== "private") {
-      throw new Error(`Invalid visibility status: ${newStatus}`);
-    }
-
-    // Step 4: Update status
-    const { data: updatedQuiz, error: updateError } = await supabase
-      .from("quizzes")
-      .update({ status: newStatus })
-      .eq("id", quizId)
-      .select()
-      .single();
-
-    if (updateError || !updatedQuiz) {
-      throw new Error(`Failed to update quiz visibility: ${updateError?.message || "Unknown error"}`);
-    }
-
-    // Step 5: Return updated quiz
-    return await this.getQuizById(supabase, quizId, userId) as QuizDetailDTO;
-  }
-
-  /**
    * Enrich quizzes with user email addresses from auth.users
    * Mutates the quiz DTOs in place to add user_email field
    *

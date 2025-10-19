@@ -128,37 +128,6 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
   }, [quizId, refetch]);
 
   /**
-   * Handle visibility change
-   */
-  const handleVisibilityChange = useCallback(
-    async (newStatus: "public" | "private") => {
-      try {
-        const response = await fetch(`/api/quizzes/${quizId}/visibility`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: newStatus }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to update visibility");
-        }
-
-        const visibilityLabel = newStatus === "public" ? "Public" : "Private";
-        toast.success(`Quiz visibility changed to ${visibilityLabel}`);
-        await refetch();
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to update visibility";
-        toast.error(errorMessage);
-        throw err;
-      }
-    },
-    [quizId, refetch]
-  );
-
-  /**
    * Handle retry after error
    */
   const handleRetry = useCallback(() => {
@@ -222,7 +191,6 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
       onStartQuiz={handleStartQuiz}
       onPublish={handlePublish}
       onUnpublish={handleUnpublish}
-      onVisibilityChange={handleVisibilityChange}
       showDeleteDialog={showDeleteDialog}
       onDeleteConfirm={handleDeleteConfirm}
       onDeleteCancel={handleDeleteCancel}
