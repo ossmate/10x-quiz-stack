@@ -61,15 +61,15 @@ export function UnpublishQuizButton({ quiz, onUnpublish }: UnpublishQuizButtonPr
             <div className="rounded-md bg-muted p-3 text-sm">
               <p className="font-medium text-foreground mb-2">What will happen:</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Quiz will return to <span className="font-medium text-foreground">Draft</span> status</li>
+                <li>
+                  • Quiz will return to <span className="font-medium text-foreground">Draft</span> status
+                </li>
                 <li>• Currently {currentVisibility}</li>
                 <li>• Will no longer be accessible to others</li>
                 <li>• You'll be able to edit it again</li>
               </ul>
             </div>
-            <p className="text-xs text-muted-foreground">
-              You can republish the quiz anytime after making changes.
-            </p>
+            <p className="text-xs text-muted-foreground">You can republish the quiz anytime after making changes.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

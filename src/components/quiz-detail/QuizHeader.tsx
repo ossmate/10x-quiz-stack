@@ -16,15 +16,7 @@ interface QuizHeaderProps {
  * Header component for quiz detail view
  * Displays quiz title, description, metadata badges, and action buttons
  */
-export function QuizHeader({
-  quiz,
-  isOwner,
-  onEdit,
-  onDelete,
-  onStartQuiz,
-  onPublish,
-  onUnpublish,
-}: QuizHeaderProps) {
+export function QuizHeader({ quiz, isOwner, onEdit, onDelete, onStartQuiz, onPublish, onUnpublish }: QuizHeaderProps) {
   return (
     <header className="border-b border-border pb-6">
       {/* Title and Description */}

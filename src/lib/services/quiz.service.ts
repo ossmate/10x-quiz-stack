@@ -850,7 +850,7 @@ export class QuizService {
     }
 
     // Step 6: Return updated quiz
-    return await this.getQuizById(supabase, quizId, userId) as QuizDetailDTO;
+    return (await this.getQuizById(supabase, quizId, userId)) as QuizDetailDTO;
   }
 
   /**
@@ -893,7 +893,7 @@ export class QuizService {
     }
 
     // Step 5: Return updated quiz
-    return await this.getQuizById(supabase, quizId, userId) as QuizDetailDTO;
+    return (await this.getQuizById(supabase, quizId, userId)) as QuizDetailDTO;
   }
 
   /**

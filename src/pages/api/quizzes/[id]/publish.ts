@@ -172,10 +172,7 @@ export const POST: APIRoute = async ({ params, cookies, request }) => {
         );
       }
 
-      if (
-        errorMessage.includes("Cannot publish quiz") ||
-        errorMessage.includes("Quiz validation failed")
-      ) {
+      if (errorMessage.includes("Cannot publish quiz") || errorMessage.includes("Quiz validation failed")) {
         return new Response(
           JSON.stringify({
             error: "Unprocessable Entity",

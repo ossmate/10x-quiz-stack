@@ -61,8 +61,12 @@ export function PublishQuizButton({ quiz, onPublish }: PublishQuizButtonProps) {
             <div className="rounded-md bg-muted p-3 text-sm">
               <p className="font-medium text-foreground mb-2">Quiz Summary:</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• {questionCount} {questionCount === 1 ? "question" : "questions"}</li>
-                <li>• Status will change to: <span className="font-medium text-foreground">Public</span></li>
+                <li>
+                  • {questionCount} {questionCount === 1 ? "question" : "questions"}
+                </li>
+                <li>
+                  • Status will change to: <span className="font-medium text-foreground">Public</span>
+                </li>
                 <li>• Anyone will be able to view and take this quiz</li>
                 <li>• You'll need to unpublish before editing</li>
               </ul>
