@@ -26,7 +26,7 @@ export function QuizActions({
   onPublish,
   onUnpublish,
 }: QuizActionsProps) {
-  const isPublished = quiz.status === "public";
+  const isPublished = quiz.status === "public" || quiz.status === "private";
   const isDraft = quiz.status === "draft";
 
   return (

@@ -87,7 +87,7 @@ export function AIQuizGenerator() {
       const result = await publishQuiz(fullQuiz);
       if (result.success && result.redirectUrl) {
         // Show success notification
-        toast.success("Quiz published successfully!", {
+        toast.success("Quiz saved successfully!", {
           description: "Redirecting to your quiz...",
           duration: 3000,
         });
@@ -100,8 +100,8 @@ export function AIQuizGenerator() {
       }
     } catch (error) {
       // Show error notification
-      const errorMessage = error instanceof Error ? error.message : "Failed to publish the quiz";
-      toast.error("Failed to publish quiz", {
+      const errorMessage = error instanceof Error ? error.message : "Failed to save the quiz";
+      toast.error("Failed to save quiz", {
         description: errorMessage,
       });
     }
@@ -259,7 +259,7 @@ export function AIQuizGenerator() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Publishing...
+                      Saving...
                     </>
                   ) : (
                     <>
@@ -272,7 +272,7 @@ export function AIQuizGenerator() {
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Publish Quiz
+                      Save Quiz
                     </>
                   )}
                 </button>
@@ -287,14 +287,14 @@ export function AIQuizGenerator() {
         <div className="space-y-6">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
             <h2 className="text-lg font-medium text-foreground">Edit Your Quiz</h2>
-            <span className="text-sm text-muted-foreground">Make any changes before publishing</span>
+            <span className="text-sm text-muted-foreground">Make any changes before saving</span>
           </div>
 
           <EditableQuizContent
             quiz={state.generatedQuiz}
             onSave={handleSaveQuiz}
             onCancel={() => handleToggleEdit()}
-            saveButtonText="Save & Publish"
+            saveButtonText="Save Quiz"
             cancelButtonText="Cancel Edits"
             isPublishing={state.isPublishing}
           />
