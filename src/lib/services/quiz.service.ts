@@ -37,7 +37,6 @@ export class QuizService {
     // Step 1: Prepare quiz metadata
     const metadata: QuizMetadata = {
       description: aiContent.description,
-      visibility: "private", // Default to private for new AI-generated quizzes
       source: "ai_generated",
       ai_model: aiModel,
       ai_prompt: prompt,
@@ -192,7 +191,6 @@ export class QuizService {
       // Step 1: Prepare quiz metadata
       const metadata: QuizMetadata = {
         description: quizData.description || "",
-        visibility: quizData.visibility,
         source: quizData.source,
         ai_model: quizData.ai_model,
         ai_prompt: quizData.ai_prompt,
@@ -291,7 +289,6 @@ export class QuizService {
         user_id: quiz.user_id,
         title: quiz.title,
         description: metadata.description,
-        visibility: metadata.visibility,
         status: quiz.status,
         source: metadata.source,
         ai_model: metadata.ai_model,
@@ -365,7 +362,6 @@ export class QuizService {
     // Extract metadata
     const metadata = (quiz.metadata as unknown as QuizMetadata) || {
       description: "",
-      visibility: "private",
       source: "manual",
     };
 
@@ -445,7 +441,6 @@ export class QuizService {
       user_id: quiz.user_id,
       title: quiz.title,
       description: metadata.description,
-      visibility: metadata.visibility,
       status: quiz.status,
       source: metadata.source,
       ai_model: metadata.ai_model,
@@ -468,23 +463,23 @@ export class QuizService {
    * @throws Error if database operations fail
    */
   async getQuizzes(supabase: SupabaseClientType, userId: string, query: QuizListQuery): Promise<QuizListResponse> {
-    const { page, limit, sort, order, visibility } = query;
+    const { page, limit, sort, order, status } = query;
 
     // Build base query filter for access control
-    // User can see: their own quizzes (all visibilities) OR public quizzes from others
+    // User can see: their own quizzes (all statuses) OR public quizzes from others
     let baseFilter = `user_id.eq.${userId}`;
 
-    // If filtering by visibility
-    if (visibility) {
-      if (visibility === "public") {
+    // If filtering by status
+    if (status) {
+      if (status === "public") {
         // Show only public quizzes (owned by user OR public from others)
         baseFilter = `and(status.eq.public,or(user_id.eq.${userId},user_id.neq.${userId}))`;
       } else {
-        // Show only private quizzes owned by user
-        baseFilter = `and(status.eq.private,user_id.eq.${userId})`;
+        // Show only quizzes with specific status owned by user
+        baseFilter = `and(status.eq.${status},user_id.eq.${userId})`;
       }
     } else {
-      // No visibility filter: show user's quizzes OR public quizzes from others
+      // No status filter: show user's quizzes OR public quizzes from others
       baseFilter = `or(user_id.eq.${userId},status.eq.public)`;
     }
 
@@ -520,7 +515,6 @@ export class QuizService {
     const quizDTOs: QuizDTO[] = (quizzes || []).map((quiz) => {
       const metadata = (quiz.metadata as unknown as QuizMetadata) || {
         description: "",
-        visibility: "private",
         source: "manual",
       };
 
@@ -663,7 +657,6 @@ export class QuizService {
       // Step 3: Update quiz metadata
       const metadata: QuizMetadata = {
         description: quizData.description || "",
-        visibility: quizData.visibility,
         source: quizData.source,
         ai_model: quizData.ai_model,
         ai_prompt: quizData.ai_prompt,
@@ -756,7 +749,6 @@ export class QuizService {
         user_id: updatedQuiz.user_id,
         title: updatedQuiz.title,
         description: metadata.description,
-        visibility: metadata.visibility,
         status: updatedQuiz.status,
         source: metadata.source,
         ai_model: metadata.ai_model,
@@ -1016,7 +1008,6 @@ export class QuizService {
       user_id: quizData.user_id,
       title: quizData.title,
       description: metadata.description,
-      visibility: metadata.visibility,
       status: quizData.status,
       source: metadata.source,
       ai_model: metadata.ai_model,

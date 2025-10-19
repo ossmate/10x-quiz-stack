@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { aiQuizGeneratorService } from "../../../../lib/services/ai-quiz-generator.service.ts";
 import { aiQuizGenerationSchema } from "../../../../lib/validation/ai-quiz-generation.schema.ts";
 import { getDefaultUserId } from "../../../../lib/utils/auth.ts";
-import type { AIGeneratedQuizPreview, QuizVisibility, QuizSource } from "../../../../types.ts";
+import type { AIGeneratedQuizPreview, QuizSource } from "../../../../types.ts";
 
 import type { Database } from "../../../../db/database.types.ts";
 
@@ -234,7 +234,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const quizPreview: AIGeneratedQuizPreview = {
       title: aiGenerationResult.content.title,
       description: aiGenerationResult.content.description || "",
-      visibility: "private" as QuizVisibility,
       source: "ai_generated" as QuizSource,
       ai_model: command.ai_model,
       ai_prompt: prompt,

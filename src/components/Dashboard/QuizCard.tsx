@@ -59,8 +59,8 @@ export function QuizCard({ quiz, questionCount, onClick, showOwnership = false, 
           )}
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
-          <Badge variant={quiz.visibility === "public" ? "default" : "secondary"}>
-            {quiz.visibility === "public" ? "Public" : "Private"}
+          <Badge variant={quiz.status === "public" ? "default" : quiz.status === "private" ? "outline" : "secondary"}>
+            {quiz.status.charAt(0).toUpperCase() + quiz.status.slice(1)}
           </Badge>
           {quiz.source === "ai_generated" && (
             <Badge

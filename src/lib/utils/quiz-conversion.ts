@@ -53,7 +53,6 @@ export function convertAIPreviewToQuizDetail(preview: AIGeneratedQuizPreview): Q
     user_id: "temp-user", // Will be replaced when quiz is published
     title: preview.title,
     description: preview.description,
-    visibility: preview.visibility,
     status: "draft" as const,
     source: preview.source,
     ai_model: preview.ai_model,

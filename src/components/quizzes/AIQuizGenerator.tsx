@@ -49,7 +49,6 @@ export function AIQuizGenerator() {
     user_id: "dummy-user-id",
     title: "",
     description: "",
-    visibility: "private",
     status: "draft",
     source: "ai_generated",
     ai_model: "",

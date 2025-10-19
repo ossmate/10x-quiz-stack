@@ -6,7 +6,6 @@ export const mockQuizData: QuizDetailDTO = {
   user_id: "test-user-123",
   title: "Test Solar System Quiz",
   description: "Learn about the planets and celestial bodies in our solar system",
-  visibility: "public",
   status: "public",
   source: "ai_generated",
   ai_model: "test-model",

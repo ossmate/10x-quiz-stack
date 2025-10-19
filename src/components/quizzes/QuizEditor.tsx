@@ -40,7 +40,6 @@ export function QuizEditor({ quiz }: QuizEditorProps) {
       const quizInput: QuizCreateInput = {
         title: fullQuiz.title,
         description: fullQuiz.description || "",
-        visibility: fullQuiz.visibility,
         source: fullQuiz.source,
         ai_model: fullQuiz.ai_model,
         ai_prompt: fullQuiz.ai_prompt,

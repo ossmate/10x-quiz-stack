@@ -178,7 +178,6 @@ export function EditableQuizContent({
     const updatedQuiz: QuizUpdateDTO = {
       title: editableQuiz.title,
       description: editableQuiz.description || "",
-      visibility: editableQuiz.visibility,
       source: editableQuiz.source,
       ai_model: editableQuiz.ai_model,
       ai_prompt: editableQuiz.ai_prompt,
