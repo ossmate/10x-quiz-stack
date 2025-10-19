@@ -30,17 +30,16 @@ export interface ProfileCreateDTO {
 // Using type instead of empty interface extension to avoid linting issues
 export type ProfileUpdateDTO = ProfileCreateDTO;
 // Quiz DTOs
-export type QuizVisibility = "public" | "private";
 export type QuizSource = "manual" | "ai_generated";
 export type QuizStatus = Enums<"quiz_status">;
 
 export interface QuizDTO {
   id: string;
   user_id: string;
+  user_email?: string; // Email of quiz creator from auth.users
   title: string;
   description: string; // Extracted from metadata
-  visibility: QuizVisibility; // Extracted from metadata
-  status: QuizStatus;
+  status: QuizStatus; // Controls both publication state and visibility
   source: QuizSource; // Extracted from metadata
   ai_model?: string; // Extracted from metadata if source is ai_generated
   ai_prompt?: string; // Extracted from metadata if source is ai_generated
@@ -55,7 +54,6 @@ export interface QuizDetailDTO extends QuizDTO {
 
 export interface QuizMetadata {
   description: string;
-  visibility: QuizVisibility;
   source: QuizSource;
   ai_model?: string;
   ai_prompt?: string;
@@ -65,7 +63,6 @@ export interface QuizMetadata {
 export interface QuizCreateDTO {
   title: string;
   description: string;
-  visibility: QuizVisibility;
   source: QuizSource;
   ai_model?: string;
   ai_prompt?: string;
@@ -175,7 +172,6 @@ export interface AIQuizGenerationDTO {
 export interface AIGeneratedQuizPreview {
   title: string;
   description: string;
-  visibility: QuizVisibility;
   source: QuizSource;
   ai_model: string;
   ai_prompt: string;

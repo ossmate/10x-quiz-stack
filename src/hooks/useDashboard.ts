@@ -70,7 +70,7 @@ export function useDashboard(): UseDashboardReturn {
 
   // Fetch Public Quizzes
   const publicQuizzesQuery = useQuizList({
-    visibility: "public",
+    status: "public",
     page: publicQuizzesPage,
     limit: 10,
     enabled: activeTab === "public-quizzes",

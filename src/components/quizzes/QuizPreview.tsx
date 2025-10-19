@@ -29,7 +29,7 @@ export function QuizPreview({ quiz, actions, showCorrectAnswers = false, classNa
           {/* Quiz Metadata Badges */}
           <div className="flex space-x-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-              {quiz.visibility}
+              {quiz.status}
             </span>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
               {quiz.questions?.length || 0} questions

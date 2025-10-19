@@ -8,13 +8,15 @@ interface QuizHeaderProps {
   onEdit: () => void;
   onDelete: () => void;
   onStartQuiz: () => void;
+  onPublish: () => Promise<void>;
+  onUnpublish: () => Promise<void>;
 }
 
 /**
  * Header component for quiz detail view
  * Displays quiz title, description, metadata badges, and action buttons
  */
-export function QuizHeader({ quiz, isOwner, onEdit, onDelete, onStartQuiz }: QuizHeaderProps) {
+export function QuizHeader({ quiz, isOwner, onEdit, onDelete, onStartQuiz, onPublish, onUnpublish }: QuizHeaderProps) {
   return (
     <header className="border-b border-border pb-6">
       {/* Title and Description */}
@@ -27,7 +29,15 @@ export function QuizHeader({ quiz, isOwner, onEdit, onDelete, onStartQuiz }: Qui
       <QuizMetadata quiz={quiz} className="mb-4" />
 
       {/* Action Buttons */}
-      <QuizActions isOwner={isOwner} onEdit={onEdit} onDelete={onDelete} onStartQuiz={onStartQuiz} />
+      <QuizActions
+        quiz={quiz}
+        isOwner={isOwner}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onStartQuiz={onStartQuiz}
+        onPublish={onPublish}
+        onUnpublish={onUnpublish}
+      />
     </header>
   );
 }

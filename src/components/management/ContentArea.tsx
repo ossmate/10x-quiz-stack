@@ -83,10 +83,6 @@ function DetailsTabContent({ quiz }: { quiz: QuizDetailDTO }) {
             <span className="ml-2 text-gray-600">{quiz.status}</span>
           </div>
           <div className="text-sm">
-            <span className="font-semibold text-gray-700">Visibility:</span>
-            <span className="ml-2 text-gray-600">{quiz.visibility}</span>
-          </div>
-          <div className="text-sm">
             <span className="font-semibold text-gray-700">Source:</span>
             <span className="ml-2 text-gray-600">{quiz.source}</span>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { navigate } from "astro:transitions/client";
+import { toast } from "sonner";
 import { useQuizDetail } from "../../hooks/useQuizDetail.ts";
 import { LoadingSpinner } from "../Dashboard/LoadingSpinner.tsx";
 import { ErrorAlert } from "../Dashboard/ErrorAlert.tsx";
@@ -75,6 +76,58 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
   }, [quizId]);
 
   /**
+   * Handle publish quiz
+   */
+  const handlePublish = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/quizzes/${quizId}/publish`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to publish quiz");
+      }
+
+      toast.success("Quiz published successfully!");
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to publish quiz";
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [quizId, refetch]);
+
+  /**
+   * Handle unpublish quiz
+   */
+  const handleUnpublish = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/quizzes/${quizId}/unpublish`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to unpublish quiz");
+      }
+
+      toast.success("Quiz unpublished successfully!");
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to unpublish quiz";
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [quizId, refetch]);
+
+  /**
    * Handle retry after error
    */
   const handleRetry = useCallback(() => {
@@ -136,6 +189,8 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
       onEdit={handleEdit}
       onDelete={handleDelete}
       onStartQuiz={handleStartQuiz}
+      onPublish={handlePublish}
+      onUnpublish={handleUnpublish}
       showDeleteDialog={showDeleteDialog}
       onDeleteConfirm={handleDeleteConfirm}
       onDeleteCancel={handleDeleteCancel}

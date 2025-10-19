@@ -9,6 +9,8 @@ interface QuizDetailContentProps {
   onEdit: () => void;
   onDelete: () => void;
   onStartQuiz: () => void;
+  onPublish: () => Promise<void>;
+  onUnpublish: () => Promise<void>;
   showDeleteDialog: boolean;
   onDeleteConfirm: () => Promise<void>;
   onDeleteCancel: () => void;
@@ -27,6 +29,8 @@ export function QuizDetailContent({
   onEdit,
   onDelete,
   onStartQuiz,
+  onPublish,
+  onUnpublish,
   showDeleteDialog,
   onDeleteConfirm,
   onDeleteCancel,
@@ -40,7 +44,15 @@ export function QuizDetailContent({
     <div className="container mx-auto px-4 py-8">
       <article className="max-w-4xl mx-auto">
         {/* Quiz Header Section */}
-        <QuizHeader quiz={quiz} isOwner={isOwner} onEdit={onEdit} onDelete={onDelete} onStartQuiz={onStartQuiz} />
+        <QuizHeader
+          quiz={quiz}
+          isOwner={isOwner}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onStartQuiz={onStartQuiz}
+          onPublish={onPublish}
+          onUnpublish={onUnpublish}
+        />
 
         {/* Questions Section */}
         <section className="mt-8">

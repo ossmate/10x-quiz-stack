@@ -114,7 +114,6 @@ export function useAIQuizGeneration() {
         body: JSON.stringify({
           title: quiz.title,
           description: quiz.description || "",
-          visibility: quiz.visibility || "private",
           source: quiz.source || "ai_generated",
           ai_model: quiz.ai_model,
           ai_prompt: quiz.ai_prompt,

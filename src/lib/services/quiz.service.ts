@@ -6,6 +6,7 @@ import type { Database } from "../../db/database.types.ts";
 import type { QuizDTO, QuizMetadata, QuizDetailDTO, QuizListResponse } from "../../types.ts";
 import type { QuizCreateInput } from "../validation/quiz-create.schema.ts";
 import type { QuizListQuery } from "../validation/quiz-list-query.schema.ts";
+import { validateQuizForPublishing } from "../validation/quiz-publish.validator.ts";
 
 type SupabaseClientType = SupabaseClient<Database>;
 
@@ -36,7 +37,6 @@ export class QuizService {
     // Step 1: Prepare quiz metadata
     const metadata: QuizMetadata = {
       description: aiContent.description,
-      visibility: "private", // Default to private for new AI-generated quizzes
       source: "ai_generated",
       ai_model: aiModel,
       ai_prompt: prompt,
@@ -191,7 +191,6 @@ export class QuizService {
       // Step 1: Prepare quiz metadata
       const metadata: QuizMetadata = {
         description: quizData.description || "",
-        visibility: quizData.visibility,
         source: quizData.source,
         ai_model: quizData.ai_model,
         ai_prompt: quizData.ai_prompt,
@@ -290,7 +289,6 @@ export class QuizService {
         user_id: quiz.user_id,
         title: quiz.title,
         description: metadata.description,
-        visibility: metadata.visibility,
         status: quiz.status,
         source: metadata.source,
         ai_model: metadata.ai_model,
@@ -364,7 +362,6 @@ export class QuizService {
     // Extract metadata
     const metadata = (quiz.metadata as unknown as QuizMetadata) || {
       description: "",
-      visibility: "private",
       source: "manual",
     };
 
@@ -444,7 +441,6 @@ export class QuizService {
       user_id: quiz.user_id,
       title: quiz.title,
       description: metadata.description,
-      visibility: metadata.visibility,
       status: quiz.status,
       source: metadata.source,
       ai_model: metadata.ai_model,
@@ -467,23 +463,23 @@ export class QuizService {
    * @throws Error if database operations fail
    */
   async getQuizzes(supabase: SupabaseClientType, userId: string, query: QuizListQuery): Promise<QuizListResponse> {
-    const { page, limit, sort, order, visibility } = query;
+    const { page, limit, sort, order, status } = query;
 
     // Build base query filter for access control
-    // User can see: their own quizzes (all visibilities) OR public quizzes from others
+    // User can see: their own quizzes (all statuses) OR public quizzes from others
     let baseFilter = `user_id.eq.${userId}`;
 
-    // If filtering by visibility
-    if (visibility) {
-      if (visibility === "public") {
+    // If filtering by status
+    if (status) {
+      if (status === "public") {
         // Show only public quizzes (owned by user OR public from others)
         baseFilter = `and(status.eq.public,or(user_id.eq.${userId},user_id.neq.${userId}))`;
       } else {
-        // Show only private quizzes owned by user
-        baseFilter = `and(status.eq.private,user_id.eq.${userId})`;
+        // Show only quizzes with specific status owned by user
+        baseFilter = `and(status.eq.${status},user_id.eq.${userId})`;
       }
     } else {
-      // No visibility filter: show user's quizzes OR public quizzes from others
+      // No status filter: show user's quizzes OR public quizzes from others
       baseFilter = `or(user_id.eq.${userId},status.eq.public)`;
     }
 
@@ -519,12 +515,14 @@ export class QuizService {
     const quizDTOs: QuizDTO[] = (quizzes || []).map((quiz) => {
       const metadata = (quiz.metadata as unknown as QuizMetadata) || {
         description: "",
-        visibility: "private",
         source: "manual",
       };
 
       return this.transformQuizToDTO(quiz, metadata);
     });
+
+    // Fetch user emails for all quizzes
+    await this.enrichQuizzesWithUserEmails(supabase, quizDTOs);
 
     return {
       quizzes: quizDTOs,
@@ -659,7 +657,6 @@ export class QuizService {
       // Step 3: Update quiz metadata
       const metadata: QuizMetadata = {
         description: quizData.description || "",
-        visibility: quizData.visibility,
         source: quizData.source,
         ai_model: quizData.ai_model,
         ai_prompt: quizData.ai_prompt,
@@ -752,7 +749,6 @@ export class QuizService {
         user_id: updatedQuiz.user_id,
         title: updatedQuiz.title,
         description: metadata.description,
-        visibility: metadata.visibility,
         status: updatedQuiz.status,
         source: metadata.source,
         ai_model: metadata.ai_model,
@@ -808,6 +804,141 @@ export class QuizService {
   }
 
   /**
+   * Publish a quiz (change status from draft to public)
+   * Validates quiz is ready for publishing before changing status
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to publish
+   * @param userId - User requesting the publish operation
+   * @returns Updated quiz detail DTO
+   * @throws Error if validation fails, quiz not found, or user lacks permission
+   */
+  async publishQuiz(supabase: SupabaseClientType, quizId: string, userId: string): Promise<QuizDetailDTO> {
+    // Step 1: Fetch quiz to check ownership and current status
+    const quiz = await this.getQuizById(supabase, quizId, userId);
+
+    if (!quiz) {
+      throw new Error("Quiz not found");
+    }
+
+    // Step 2: Check ownership
+    if (quiz.user_id !== userId) {
+      throw new Error("Forbidden");
+    }
+
+    // Step 3: Check current status
+    if (quiz.status !== "draft") {
+      throw new Error(`Cannot publish quiz with status "${quiz.status}". Only draft quizzes can be published.`);
+    }
+
+    // Step 4: Validate quiz is ready for publishing
+    const validation = validateQuizForPublishing(quiz);
+    if (!validation.valid) {
+      throw new Error(`Quiz validation failed: ${validation.errors.join(", ")}`);
+    }
+
+    // Step 5: Update status to public
+    const { data: updatedQuiz, error: updateError } = await supabase
+      .from("quizzes")
+      .update({ status: "public" })
+      .eq("id", quizId)
+      .select()
+      .single();
+
+    if (updateError || !updatedQuiz) {
+      throw new Error(`Failed to publish quiz: ${updateError?.message || "Unknown error"}`);
+    }
+
+    // Step 6: Return updated quiz
+    return (await this.getQuizById(supabase, quizId, userId)) as QuizDetailDTO;
+  }
+
+  /**
+   * Unpublish a quiz (change status from public/private back to draft)
+   *
+   * @param supabase - Supabase client instance
+   * @param quizId - Quiz ID to unpublish
+   * @param userId - User requesting the unpublish operation
+   * @returns Updated quiz detail DTO
+   * @throws Error if quiz not found, user lacks permission, or invalid status
+   */
+  async unpublishQuiz(supabase: SupabaseClientType, quizId: string, userId: string): Promise<QuizDetailDTO> {
+    // Step 1: Fetch quiz to check ownership and current status
+    const quiz = await this.getQuizById(supabase, quizId, userId);
+
+    if (!quiz) {
+      throw new Error("Quiz not found");
+    }
+
+    // Step 2: Check ownership
+    if (quiz.user_id !== userId) {
+      throw new Error("Forbidden");
+    }
+
+    // Step 3: Check current status (can only unpublish from public or private)
+    if (quiz.status !== "public" && quiz.status !== "private") {
+      throw new Error(`Cannot unpublish quiz with status "${quiz.status}".`);
+    }
+
+    // Step 4: Update status to draft
+    const { data: updatedQuiz, error: updateError } = await supabase
+      .from("quizzes")
+      .update({ status: "draft" })
+      .eq("id", quizId)
+      .select()
+      .single();
+
+    if (updateError || !updatedQuiz) {
+      throw new Error(`Failed to unpublish quiz: ${updateError?.message || "Unknown error"}`);
+    }
+
+    // Step 5: Return updated quiz
+    return (await this.getQuizById(supabase, quizId, userId)) as QuizDetailDTO;
+  }
+
+  /**
+   * Enrich quizzes with user email addresses from auth.users
+   * Mutates the quiz DTOs in place to add user_email field
+   *
+   * @param supabase - Supabase client instance
+   * @param quizzes - Array of quiz DTOs to enrich
+   */
+  private async enrichQuizzesWithUserEmails(supabase: SupabaseClientType, quizzes: QuizDTO[]): Promise<void> {
+    if (quizzes.length === 0) {
+      return;
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(quizzes.map((q) => q.user_id))];
+
+    try {
+      // Fetch user emails from auth.users using admin API
+      const { data, error } = await supabase.auth.admin.listUsers();
+
+      if (error || !data) {
+        console.warn("Failed to fetch user emails:", error?.message);
+        return;
+      }
+
+      // Create a map of user_id -> email
+      const emailMap = new Map<string, string>();
+      data.users.forEach((user) => {
+        if (user.id && user.email) {
+          emailMap.set(user.id, user.email);
+        }
+      });
+
+      // Add emails to quizzes
+      quizzes.forEach((quiz) => {
+        quiz.user_email = emailMap.get(quiz.user_id);
+      });
+    } catch (error) {
+      console.warn("Error enriching quizzes with user emails:", error);
+      // Don't throw - just log warning and continue without emails
+    }
+  }
+
+  /**
    * Transforms a database quiz record to QuizDTO
    *
    * @param quizData - Quiz record from database
@@ -823,7 +954,6 @@ export class QuizService {
       user_id: quizData.user_id,
       title: quizData.title,
       description: metadata.description,
-      visibility: metadata.visibility,
       status: quizData.status,
       source: metadata.source,
       ai_model: metadata.ai_model,

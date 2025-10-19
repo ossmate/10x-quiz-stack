@@ -3,7 +3,7 @@ import { navigate } from "astro:transitions/client";
 import type { QuizListResponse } from "../types.ts";
 
 interface UseQuizListParams {
-  visibility?: "public" | "private";
+  status?: "public" | "private" | "draft";
   page: number;
   limit?: number;
   enabled?: boolean;
@@ -17,7 +17,7 @@ interface UseQuizListReturn {
 }
 
 export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
-  const { visibility, page, limit = 10, enabled = true } = params;
+  const { status, page, limit = 10, enabled = true } = params;
   const [data, setData] = useState<QuizListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +39,8 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
           order: "desc",
         };
 
-        if (visibility) {
-          queryParams.visibility = visibility;
+        if (status) {
+          queryParams.status = status;
         }
 
         const searchParams = new URLSearchParams(queryParams);
@@ -52,6 +52,7 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
             "Content-Type": "application/json",
           },
           credentials: "include",
+          cache: "no-store",
           signal,
         });
 
@@ -78,7 +79,7 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
         setIsLoading(false);
       }
     },
-    [enabled, page, limit, visibility]
+    [enabled, page, limit, status]
   );
 
   useEffect(() => {
@@ -89,6 +90,22 @@ export function useQuizList(params: UseQuizListParams): UseQuizListReturn {
       abortController.abort();
     };
   }, [fetchQuizzes]);
+
+  // Refetch when navigating back to this page (handles Astro view transitions)
+  useEffect(() => {
+    const handleAstroPageLoad = () => {
+      if (enabled) {
+        fetchQuizzes();
+      }
+    };
+
+    // Listen to Astro's page load event for view transitions
+    document.addEventListener("astro:page-load", handleAstroPageLoad);
+
+    return () => {
+      document.removeEventListener("astro:page-load", handleAstroPageLoad);
+    };
+  }, [fetchQuizzes, enabled]);
 
   const refetch = useCallback(async () => {
     await fetchQuizzes();

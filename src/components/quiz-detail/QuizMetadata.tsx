@@ -45,14 +45,28 @@ function formatRelativeTime(dateString: string): string {
  */
 export function QuizMetadata({ quiz, className }: QuizMetadataProps) {
   const isAIGenerated = quiz.source === "ai_generated";
-  // Show status badge for draft or archived quizzes
-  const showStatusBadge = quiz.status === "draft" || quiz.status === "archived";
+
+  // Get status badge variant based on status
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "secondary";
+      case "public":
+        return "default";
+      case "private":
+        return "outline";
+      case "archived":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
 
   return (
     <div className={cn("flex flex-wrap gap-2 items-center", className)}>
-      {/* Visibility Badge */}
-      <Badge variant={quiz.visibility === "public" ? "default" : "secondary"}>
-        {quiz.visibility === "public" ? "Public" : "Private"}
+      {/* Status Badge - Always show */}
+      <Badge variant={getStatusVariant(quiz.status)}>
+        {quiz.status.charAt(0).toUpperCase() + quiz.status.slice(1)}
       </Badge>
 
       {/* Source Badge */}
@@ -61,15 +75,8 @@ export function QuizMetadata({ quiz, className }: QuizMetadataProps) {
       {/* AI Model Badge */}
       {isAIGenerated && quiz.ai_model && <Badge variant="secondary">{quiz.ai_model}</Badge>}
 
-      {/* Status Badge (show for draft or archived) */}
-      {showStatusBadge && (
-        <Badge variant={quiz.status === "archived" ? "destructive" : "secondary"}>
-          {quiz.status.charAt(0).toUpperCase() + quiz.status.slice(1)}
-        </Badge>
-      )}
-
       {/* Creation Date */}
-      <span className="text-sm text-gray-500 ml-2">Created {formatRelativeTime(quiz.created_at)}</span>
+      <span className="text-sm text-muted-foreground ml-2">Created {formatRelativeTime(quiz.created_at)}</span>
     </div>
   );
 }
