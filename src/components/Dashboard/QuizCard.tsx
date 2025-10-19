@@ -84,8 +84,10 @@ export function QuizCard({ quiz, questionCount, onClick, showOwnership = false, 
             </span>
           )}
         </div>
-        {showOwnership && quiz.user_id && (
-          <span className="text-xs text-muted-foreground">By: User {quiz.user_id.slice(0, 8)}</span>
+        {showOwnership && (quiz.user_email || quiz.user_id) && (
+          <span className="text-xs text-muted-foreground">
+            By: {quiz.user_email || `User ${quiz.user_id.slice(0, 8)}`}
+          </span>
         )}
       </CardFooter>
     </Card>

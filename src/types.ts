@@ -37,6 +37,7 @@ export type QuizStatus = Enums<"quiz_status">;
 export interface QuizDTO {
   id: string;
   user_id: string;
+  user_email?: string; // Email of quiz creator from auth.users
   title: string;
   description: string; // Extracted from metadata
   visibility: QuizVisibility; // Extracted from metadata
