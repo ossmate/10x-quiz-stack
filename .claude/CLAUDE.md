@@ -58,5 +58,7 @@ For detailed guidelines on specific technologies and patterns, refer to:
 - `.claude/docs/supabase-init.md` - Supabase integration setup
 - `.claude/docs/supabase-migrations.md` - Database migration guidelines
 - `.claude/docs/shadcn-ui.md` - Shadcn/ui component usage
+- `.claude/docs/vitest-unit-testing.md` - Vitest unit and integration testing guidelines
+- `.claude/docs/playwright-e2e-testing.md` - Playwright end-to-end testing guidelines
 
 **⚠️ Styling Rule**: NEVER use hardcoded colors (e.g., `bg-gray-50`, `text-blue-600`). Always use semantic tokens (e.g., `bg-background`, `text-foreground`, `bg-primary`). See tailwind-theming.md for details.
