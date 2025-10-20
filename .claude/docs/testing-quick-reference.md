@@ -3,6 +3,7 @@
 ## Vitest - Unit Testing
 
 ### Basic Test Structure
+
 ```typescript
 import { describe, it, expect } from "vitest";
 
@@ -10,10 +11,10 @@ describe("Feature Name", () => {
   it("should do something", () => {
     // Arrange
     const input = "test";
-    
+
     // Act
     const result = someFunction(input);
-    
+
     // Assert
     expect(result).toBe("expected");
   });
@@ -21,6 +22,7 @@ describe("Feature Name", () => {
 ```
 
 ### React Component Testing
+
 ```typescript
 import { render, screen } from "@/test/utils/test-utils";
 import userEvent from "@testing-library/user-event";
@@ -35,7 +37,7 @@ describe("MyComponent", () => {
   it("should handle user interaction", async () => {
     const user = userEvent.setup();
     render(<MyComponent />);
-    
+
     await user.click(screen.getByRole("button"));
     expect(screen.getByText("Clicked")).toBeInTheDocument();
   });
@@ -43,6 +45,7 @@ describe("MyComponent", () => {
 ```
 
 ### Mocking Functions
+
 ```typescript
 import { vi } from "vitest";
 
@@ -57,6 +60,7 @@ expect(spy).toHaveBeenCalled();
 ```
 
 ### Mocking Modules
+
 ```typescript
 import { vi } from "vitest";
 
@@ -72,6 +76,7 @@ vi.mock("@/db/supabase.client", () => ({
 ```
 
 ### Async Testing
+
 ```typescript
 it("should handle async operations", async () => {
   const result = await asyncFunction();
@@ -88,6 +93,7 @@ it("should wait for element", async () => {
 ## Playwright - E2E Testing
 
 ### Basic Test Structure
+
 ```typescript
 import { test, expect } from "@playwright/test";
 
@@ -98,6 +104,7 @@ test("should navigate to page", async ({ page }) => {
 ```
 
 ### Page Object Model
+
 ```typescript
 // pages/login.page.ts
 import { type Page } from "@playwright/test";
@@ -124,6 +131,7 @@ test("user can login", async ({ page }) => {
 ```
 
 ### Locators (Semantic)
+
 ```typescript
 // Preferred - by role
 await page.getByRole("button", { name: "Submit" });
@@ -141,6 +149,7 @@ await page.getByTestId("submit-button");
 ```
 
 ### User Interactions
+
 ```typescript
 // Click
 await page.getByRole("button").click();
@@ -159,6 +168,7 @@ await page.getByLabel("Upload").setInputFiles("path/to/file");
 ```
 
 ### Assertions
+
 ```typescript
 // Visibility
 await expect(page.getByText("Hello")).toBeVisible();
@@ -180,23 +190,23 @@ await expect(page.getByRole("link")).toHaveAttribute("href", "/home");
 ```
 
 ### Waiting and Timing
+
 ```typescript
 // Wait for element
-await page.waitForSelector('text=Loaded');
+await page.waitForSelector("text=Loaded");
 
 // Wait for URL
-await page.waitForURL('/dashboard');
+await page.waitForURL("/dashboard");
 
 // Wait for response
-await page.waitForResponse(response => 
-  response.url().includes('/api/') && response.status() === 200
-);
+await page.waitForResponse((response) => response.url().includes("/api/") && response.status() === 200);
 
 // Manual wait (avoid when possible)
 await page.waitForTimeout(1000);
 ```
 
 ### Test Hooks
+
 ```typescript
 import { test } from "@playwright/test";
 
@@ -220,16 +230,17 @@ test.describe("Feature", () => {
 ```
 
 ### Browser Context
+
 ```typescript
 test("with custom context", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
     locale: "en-US",
   });
-  
+
   const page = await context.newPage();
   await page.goto("/");
-  
+
   await context.close();
 });
 ```
@@ -237,15 +248,16 @@ test("with custom context", async ({ browser }) => {
 ## Common Testing Patterns
 
 ### Testing Forms
+
 ```typescript
 // Unit test
 it("should validate form input", async () => {
   const user = userEvent.setup();
   render(<LoginForm />);
-  
+
   await user.type(screen.getByLabelText("Email"), "invalid");
   await user.click(screen.getByRole("button", { name: "Submit" }));
-  
+
   expect(screen.getByText("Invalid email")).toBeInTheDocument();
 });
 
@@ -260,6 +272,7 @@ test("should submit form", async ({ page }) => {
 ```
 
 ### Testing API Calls
+
 ```typescript
 // Unit test
 it("should fetch data", async () => {
@@ -268,40 +281,39 @@ it("should fetch data", async () => {
     json: async () => ({ data: "test" }),
   });
   global.fetch = mockFetch;
-  
+
   const result = await fetchData();
   expect(result).toEqual({ data: "test" });
 });
 
 // E2E test
 test("should load data from API", async ({ page }) => {
-  await page.route("**/api/data", route => 
-    route.fulfill({ json: { data: "test" } })
-  );
-  
+  await page.route("**/api/data", (route) => route.fulfill({ json: { data: "test" } }));
+
   await page.goto("/");
   await expect(page.getByText("test")).toBeVisible();
 });
 ```
 
 ### Testing Error States
+
 ```typescript
 // Unit test
 it("should display error message", async () => {
   const mockFetch = vi.fn().mockRejectedValue(new Error("Failed"));
   global.fetch = mockFetch;
-  
+
   render(<DataComponent />);
-  
+
   await screen.findByText("Error: Failed");
 });
 
 // E2E test
 test("should show error on failed request", async ({ page }) => {
-  await page.route("**/api/data", route => 
+  await page.route("**/api/data", route =>
     route.fulfill({ status: 500 })
   );
-  
+
   await page.goto("/");
   await expect(page.getByText("Error loading data")).toBeVisible();
 });
@@ -310,6 +322,7 @@ test("should show error on failed request", async ({ page }) => {
 ## Debugging
 
 ### Vitest
+
 ```bash
 # Run specific test file
 npm run test -- src/lib/utils.test.ts
@@ -325,6 +338,7 @@ npm run test:ui
 ```
 
 ### Playwright
+
 ```bash
 # Run in debug mode
 npm run test:e2e:debug

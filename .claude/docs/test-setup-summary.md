@@ -5,6 +5,7 @@ This document summarizes the testing environment configuration for the 10x-quiz-
 ## ✅ Installed Dependencies
 
 ### Unit Testing (Vitest)
+
 - `vitest` - Fast unit test framework
 - `@vitest/ui` - Interactive UI for running tests
 - `@vitest/coverage-v8` - Code coverage provider
@@ -16,6 +17,7 @@ This document summarizes the testing environment configuration for the 10x-quiz-
 - `@testing-library/user-event` - User interaction simulation
 
 ### E2E Testing (Playwright)
+
 - `@playwright/test` - End-to-end testing framework
 - `playwright` - Browser automation library
 - Chromium browser installed
@@ -23,25 +25,30 @@ This document summarizes the testing environment configuration for the 10x-quiz-
 ## 📁 Created Files and Directories
 
 ### Configuration Files
+
 - `vitest.config.ts` - Vitest configuration with jsdom environment and coverage setup
 - `playwright.config.ts` - Playwright configuration for Chromium with Desktop Chrome
 
 ### Test Setup Files
+
 - `src/test/setup.ts` - Global test setup with DOM mocks (matchMedia, IntersectionObserver, ResizeObserver)
 - `src/test/mocks/supabase.mock.ts` - Supabase client mock for unit tests
 - `src/test/utils/test-utils.tsx` - Custom render function with providers
 
 ### Example Tests
+
 - `src/lib/example.test.ts` - Example unit test demonstrating Vitest capabilities
 - `tests/e2e/home.spec.ts` - Example E2E test for home page
 - `tests/e2e/pages/home.page.ts` - Page Object Model example
 
 ### Documentation
+
 - `TESTING.md` - Comprehensive testing guide
 
 ## 🎯 Available NPM Scripts
 
 ### Unit Testing
+
 ```bash
 npm run test              # Run tests in watch mode
 npm run test:ui          # Run tests with interactive UI
@@ -51,6 +58,7 @@ npm run test:watch       # Run tests in watch mode
 ```
 
 ### E2E Testing
+
 ```bash
 npm run test:e2e         # Run E2E tests
 npm run test:e2e:ui      # Run E2E tests with UI mode
@@ -61,6 +69,7 @@ npm run test:e2e:codegen # Generate tests with Playwright codegen
 ## 🔧 Configuration Highlights
 
 ### Vitest
+
 - **Environment**: jsdom for DOM testing
 - **Setup File**: Automatic cleanup after each test
 - **Coverage**: V8 provider with HTML/JSON/text reports
@@ -68,6 +77,7 @@ npm run test:e2e:codegen # Generate tests with Playwright codegen
 - **Test Pattern**: `**/*.{test,spec}.{js,ts,jsx,tsx}`
 
 ### Playwright
+
 - **Browser**: Chromium (Desktop Chrome)
 - **Base URL**: http://localhost:4321
 - **Test Directory**: `tests/e2e`
@@ -81,7 +91,9 @@ npm run test:e2e:codegen # Generate tests with Playwright codegen
 ## 🧪 Test Structure
 
 ### Unit Tests
+
 Place unit tests next to the code they test:
+
 ```
 src/
   components/
@@ -93,7 +105,9 @@ src/
 ```
 
 ### E2E Tests
+
 Use Page Object Model pattern:
+
 ```
 tests/
   e2e/
@@ -115,6 +129,7 @@ tests/
 ## 📚 Best Practices
 
 ### Unit Testing
+
 - ✅ Test behavior, not implementation
 - ✅ Use descriptive test names
 - ✅ Follow Arrange-Act-Assert pattern
@@ -123,6 +138,7 @@ tests/
 - ✅ Use `describe` blocks for grouping
 
 ### E2E Testing
+
 - ✅ Use Page Object Model
 - ✅ Leverage semantic locators
 - ✅ Test user flows, not UI details
@@ -133,6 +149,7 @@ tests/
 ## 🔍 Verification
 
 The setup has been verified with:
+
 - ✅ Example unit test passing (3 tests)
 - ✅ Vitest configuration working
 - ✅ Playwright configuration ready

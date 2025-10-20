@@ -149,6 +149,7 @@ export class LoginPage {
 ### Vitest Configuration
 
 See `vitest.config.ts` for configuration options:
+
 - Test environment: jsdom
 - Setup file: `src/test/setup.ts`
 - Coverage provider: v8
@@ -156,6 +157,7 @@ See `vitest.config.ts` for configuration options:
 ### Playwright Configuration
 
 See `playwright.config.ts` for configuration options:
+
 - Browser: Chromium (Desktop Chrome)
 - Base URL: http://localhost:4321
 - Test directory: `tests/e2e`
