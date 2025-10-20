@@ -25,3 +25,12 @@ pnpm-debug.log*
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# test coverage
+coverage/
+.nyc_output/
+
+# playwright
+playwright-report/
+test-results/
+playwright/.cache/
