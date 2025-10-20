@@ -4,7 +4,7 @@ import { aiQuizResponseSchema, parseAndValidateAIResponse } from "./ai-response.
 
 describe("aiQuizResponseSchema", () => {
   // Helper function to create a valid option
-  const createValidOption = (content: string, isCorrect: boolean = false) => ({
+  const createValidOption = (content: string, isCorrect = false) => ({
     content,
     is_correct: isCorrect,
   });
@@ -649,7 +649,9 @@ describe("parseAndValidateAIResponse", () => {
           "title": "Test Quiz",
           "description": "A test quiz",
           "questions": [
-            ${Array.from({ length: 5 }, () => `{
+            ${Array.from(
+              { length: 5 },
+              () => `{
               "content": "Question",
               "options": [
                 { "content": "Option 1", "is_correct": true },
@@ -657,7 +659,8 @@ describe("parseAndValidateAIResponse", () => {
                 { "content": "Option 3", "is_correct": false },
                 { "content": "Option 4", "is_correct": false }
               ]
-            }`).join(",\n")}
+            }`
+            ).join(",\n")}
           ]
         }
       `;

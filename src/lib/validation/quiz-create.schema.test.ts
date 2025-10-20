@@ -4,7 +4,7 @@ import { quizCreateSchema } from "./quiz-create.schema.ts";
 
 describe("quizCreateSchema", () => {
   // Helper function to create a valid option
-  const createValidOption = (position: number, isCorrect: boolean = false) => ({
+  const createValidOption = (position: number, isCorrect = false) => ({
     content: `Option ${position}`,
     is_correct: isCorrect,
     position,
@@ -567,10 +567,7 @@ describe("quizCreateSchema", () => {
           {
             content: "Question 1",
             position: 1,
-            options: [
-              { content: "", is_correct: true, position: 1 },
-              createValidOption(2),
-            ],
+            options: [{ content: "", is_correct: true, position: 1 }, createValidOption(2)],
           },
         ],
       };
@@ -609,10 +606,7 @@ describe("quizCreateSchema", () => {
           {
             content: "Question 1",
             position: 1,
-            options: [
-              { content: "Option 1", is_correct: true, position: -1 },
-              createValidOption(2),
-            ],
+            options: [{ content: "Option 1", is_correct: true, position: -1 }, createValidOption(2)],
           },
         ],
       };
@@ -629,10 +623,7 @@ describe("quizCreateSchema", () => {
           {
             content: "Question 1",
             position: 1,
-            options: [
-              { content: "Option 1", is_correct: true, position: 0 },
-              createValidOption(2),
-            ],
+            options: [{ content: "Option 1", is_correct: true, position: 0 }, createValidOption(2)],
           },
         ],
       };
@@ -649,10 +640,7 @@ describe("quizCreateSchema", () => {
           {
             content: "Question 1",
             position: 1,
-            options: [
-              { content: "Option 1", is_correct: true, position: 1.5 },
-              createValidOption(2),
-            ],
+            options: [{ content: "Option 1", is_correct: true, position: 1.5 }, createValidOption(2)],
           },
         ],
       };
@@ -710,12 +698,7 @@ describe("quizCreateSchema", () => {
           content: `Question ${i + 1} about React Hooks`,
           explanation: `Explanation for question ${i + 1}`,
           position: i + 1,
-          options: [
-            createValidOption(1, true),
-            createValidOption(2),
-            createValidOption(3),
-            createValidOption(4),
-          ],
+          options: [createValidOption(1, true), createValidOption(2), createValidOption(3), createValidOption(4)],
         })),
       };
 
