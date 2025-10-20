@@ -142,46 +142,46 @@ describe("extractJSONFromMarkdown", () => {
 
     it("should return trimmed text for plain JSON array", () => {
       // Arrange
-      const text = '[1, 2, 3]';
+      const text = "[1, 2, 3]";
 
       // Act
       const result = extractJSONFromMarkdown(text);
 
       // Assert
-      expect(result).toBe('[1, 2, 3]');
+      expect(result).toBe("[1, 2, 3]");
     });
 
     it("should return empty string for empty input", () => {
       // Arrange
-      const text = '';
+      const text = "";
 
       // Act
       const result = extractJSONFromMarkdown(text);
 
       // Assert
-      expect(result).toBe('');
+      expect(result).toBe("");
     });
 
     it("should return empty string for whitespace-only input", () => {
       // Arrange
-      const text = '   \n  \t  ';
+      const text = "   \n  \t  ";
 
       // Act
       const result = extractJSONFromMarkdown(text);
 
       // Assert
-      expect(result).toBe('');
+      expect(result).toBe("");
     });
 
     it("should handle text with backticks but not proper markdown", () => {
       // Arrange
-      const text = 'Some text with ` backticks ` but no code block';
+      const text = "Some text with ` backticks ` but no code block";
 
       // Act
       const result = extractJSONFromMarkdown(text);
 
       // Assert
-      expect(result).toBe('Some text with ` backticks ` but no code block');
+      expect(result).toBe("Some text with ` backticks ` but no code block");
     });
 
     it("should handle incomplete markdown block", () => {
@@ -357,31 +357,31 @@ describe("cleanJSONString", () => {
 
       // Assert
       expect(result).toBe('{"key": "\uFEFFvalue"}');
-      expect(result.includes('\uFEFF')).toBe(true); // BOM in value still present
+      expect(result.includes("\uFEFF")).toBe(true); // BOM in value still present
     });
   });
 
   describe("edge cases", () => {
     it("should handle empty string", () => {
       // Arrange
-      const jsonString = '';
+      const jsonString = "";
 
       // Act
       const result = cleanJSONString(jsonString);
 
       // Assert
-      expect(result).toBe('');
+      expect(result).toBe("");
     });
 
     it("should handle whitespace-only string", () => {
       // Arrange
-      const jsonString = '   \n\t   ';
+      const jsonString = "   \n\t   ";
 
       // Act
       const result = cleanJSONString(jsonString);
 
       // Assert
-      expect(result).toBe('');
+      expect(result).toBe("");
     });
 
     it("should preserve internal whitespace in JSON", () => {
@@ -427,7 +427,7 @@ describe("parseJSONRobustly", () => {
 
     it("should parse JSON array from markdown code block", () => {
       // Arrange
-      const text = '```json\n[1, 2, 3]\n```';
+      const text = "```json\n[1, 2, 3]\n```";
 
       // Act
       const result = parseJSONRobustly(text);
@@ -549,7 +549,7 @@ describe("parseJSONRobustly", () => {
   describe("strategy 3: JSON array extraction", () => {
     it("should parse plain JSON array without markdown", () => {
       // Arrange
-      const text = '[1, 2, 3]';
+      const text = "[1, 2, 3]";
 
       // Act
       const result = parseJSONRobustly(text);
@@ -563,7 +563,7 @@ describe("parseJSONRobustly", () => {
       // Known limitation: Strategy 2 (object extraction) doesn't properly
       // fall through to Strategy 3 (array extraction) when no object is found.
       // For production use, AI should return JSON in markdown blocks.
-      const text = 'Here is your array: [1, 2, 3]';
+      const text = "Here is your array: [1, 2, 3]";
 
       // Act & Assert
       // This is expected to fail with current implementation
@@ -583,7 +583,7 @@ describe("parseJSONRobustly", () => {
 
     it("should parse nested arrays", () => {
       // Arrange
-      const text = '[[1, 2], [3, 4]]';
+      const text = "[[1, 2], [3, 4]]";
 
       // Act
       const result = parseJSONRobustly(text);
@@ -755,7 +755,7 @@ Random text after`;
 
     it("should handle markdown with invalid JSON", () => {
       // Arrange
-      const text = '```json\n{invalid json}\n```';
+      const text = "```json\n{invalid json}\n```";
 
       // Act & Assert
       expect(() => parseJSONRobustly(text)).toThrow();
