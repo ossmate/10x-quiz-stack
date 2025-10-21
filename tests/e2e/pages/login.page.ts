@@ -91,7 +91,10 @@ export class LoginPage {
     await this.fillLoginForm(emailOrUsername, password);
 
     // Wait for navigation after form submission (login redirects with window.location.href)
-    await Promise.all([this.page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 10000 }), this.submit()]);
+    await Promise.all([
+      this.page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 10000 }),
+      this.submit(),
+    ]);
   }
 
   /**
