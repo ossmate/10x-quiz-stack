@@ -40,21 +40,23 @@ jobs:
 
       # TODO: Fix linting issues before enabling this step
       # - name: Run linting
-      #   run: npm run lint    - name: Run unit tests
-      run: npm run test:run
+      #   run: npm run lint
 
-    - name: Run unit tests with coverage
-      run: npm run test:coverage
+      - name: Run unit tests
+        run: npm run test:run
 
-    - name: Build production
-      run: npm run build
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: dist/
-        retention-days: 7
+      - name: Build production
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
 
   security-audit:
     runs-on: ubuntu-latest
