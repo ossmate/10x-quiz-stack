@@ -19,7 +19,7 @@ QuizStack is an application designed to help users prepare for job interviews an
 - **Frontend:** Astro 5, React 19, TypeScript 5, Tailwind 4, Shadcn/ui
 - **Backend:** Supabase (database, authentication) and AI integration via Openrouter.ai
 - **Testing:** Vitest and React Testing Library for unit and integration tests, Playwright for end-to-end tests
-- **CI/CD and Hosting:** GitHub Actions for CI/CD and Docker-based deployment on DigitalOcean
+- **CI/CD and Hosting:** GitHub Actions for CI/CD and Vercel for hosting
 
 ## Getting Started Locally
 
@@ -75,6 +75,17 @@ QuizStack focuses on offering a simple yet interactive platform for quiz-based i
 - Does not include progress tracking.
 - Limited support for various question types.
 - No ranking system implemented in the MVP.
+
+## Deployment
+
+This project is configured for deployment on Vercel. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instructions.
+
+### Quick Deploy to Vercel
+
+1. Fork this repository
+2. Connect your GitHub repository to Vercel
+3. Configure environment variables in Vercel dashboard
+4. Deploy automatically via GitHub Actions or manually via Vercel CLI
 
 ## Project Status
 
