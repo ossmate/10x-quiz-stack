@@ -1,12 +1,9 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 
 import { quizService } from "../../../lib/services/quiz.service.ts";
 import { uuidSchema } from "../../../lib/validation/uuid.schema.ts";
 import { quizCreateSchema } from "../../../lib/validation/quiz-create.schema.ts";
 import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
-
-import type { Database } from "../../../db/database.types.ts";
 
 export const prerender = false;
 
@@ -58,12 +55,8 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       );
     }
 
-    // Step 3: Setup Supabase clients
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.SUPABASE_URL;
-
-    // Create SSR-compatible client for authentication
-    const authClient = createSupabaseServerInstance({
+    // Step 3: Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
@@ -71,7 +64,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     // Step 4: Check authentication using SSR client
     const {
       data: { session },
-    } = await authClient.auth.getSession();
+    } = await supabaseClient.auth.getSession();
     if (!session) {
       return new Response(
         JSON.stringify({
@@ -88,50 +81,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     }
     const userId = session.user.id;
 
-    // Setup service role client for database operations (bypasses RLS)
-    if (!supabaseUrl) {
-      return new Response(
-        JSON.stringify({
-          error: "Configuration Error",
-          message: "Supabase URL is not configured. Please check your environment variables.",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    let supabaseClient = authClient;
-    if (serviceRoleKey) {
-      try {
-        supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        return new Response(
-          JSON.stringify({
-            error: "Database Configuration Error",
-            message: "Failed to create Supabase client with service role key.",
-            details: errorMessage,
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
-    // Step 5: Fetch quiz using the service
+    // Step 5: Fetch quiz using the service (RLS will control access)
     let quiz;
     try {
       quiz = await quizService.getQuizById(supabaseClient, validationResult.data, userId);
@@ -292,12 +242,8 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       );
     }
 
-    // Step 4: Setup Supabase clients
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.SUPABASE_URL;
-
-    // Create SSR-compatible client for authentication
-    const authClient = createSupabaseServerInstance({
+    // Step 4: Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
@@ -305,7 +251,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     // Check authentication using SSR client
     const {
       data: { session },
-    } = await authClient.auth.getSession();
+    } = await supabaseClient.auth.getSession();
     if (!session) {
       return new Response(
         JSON.stringify({
@@ -322,51 +268,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     }
     const userId = session.user.id;
 
-    // Check if Supabase URL is available
-    if (!supabaseUrl) {
-      return new Response(
-        JSON.stringify({
-          error: "Configuration Error",
-          message: "Supabase URL is not configured. Please check your environment variables.",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Setup service role client for database operations (bypasses RLS)
-    let supabaseClient = authClient;
-    if (serviceRoleKey) {
-      try {
-        supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        return new Response(
-          JSON.stringify({
-            error: "Database Configuration Error",
-            message: "Failed to create Supabase client with service role key.",
-            details: errorMessage,
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
-    // Step 5: Update quiz using the service
+    // Step 5: Update quiz using the service (RLS will control access)
     let updatedQuiz;
     try {
       updatedQuiz = await quizService.updateQuiz(
@@ -505,12 +407,8 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       );
     }
 
-    // Step 3: Setup Supabase clients
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.SUPABASE_URL;
-
-    // Create SSR-compatible client for authentication
-    const authClient = createSupabaseServerInstance({
+    // Step 3: Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
@@ -518,7 +416,7 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
     // Check authentication using SSR client
     const {
       data: { session },
-    } = await authClient.auth.getSession();
+    } = await supabaseClient.auth.getSession();
     if (!session) {
       return new Response(
         JSON.stringify({
@@ -535,51 +433,7 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
     }
     const userId = session.user.id;
 
-    // Check if Supabase URL is available
-    if (!supabaseUrl) {
-      return new Response(
-        JSON.stringify({
-          error: "Configuration Error",
-          message: "Supabase URL is not configured. Please check your environment variables.",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Setup service role client for database operations (bypasses RLS)
-    let supabaseClient = authClient;
-    if (serviceRoleKey) {
-      try {
-        supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        return new Response(
-          JSON.stringify({
-            error: "Database Configuration Error",
-            message: "Failed to create Supabase client with service role key.",
-            details: errorMessage,
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
-    // Step 4: Delete quiz using the service
+    // Step 4: Delete quiz using the service (RLS will control access)
     try {
       await quizService.deleteQuiz(supabaseClient, validationResult.data, userId);
     } catch (error) {
