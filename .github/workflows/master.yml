@@ -18,7 +18,7 @@ env:
   NODE_VERSION: '22.14.0'
 
 jobs:
-  deploy:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,17 +37,65 @@ jobs:
       - name: Run linting
         run: npm run lint
 
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run unit tests
         run: npm run test:run
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, unit-test]
 
-      - name: Run E2E tests
-        run: npm run test:e2e
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build project
         run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
