@@ -13,7 +13,6 @@ export function RegistrationForm() {
     email: "",
     password: "",
     confirmPassword: "",
-    username: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
   const [formError, setFormError] = useState<string>("");
@@ -58,24 +57,6 @@ export function RegistrationForm() {
     }
   };
 
-  const handleUsernameBlur = () => {
-    // TODO: Optionally check availability on blur when backend is ready
-    // if (formData.username.length >= 3) {
-    //   const checkAvailability = async () => {
-    //     const response = await fetch("/api/auth/check-username", {
-    //       method: "POST",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({ username: formData.username }),
-    //     });
-    //     const data = await response.json();
-    //     if (!data.available) {
-    //       setErrors((prev) => ({ ...prev, username: "Username already taken" }));
-    //     }
-    //   };
-    //   checkAvailability();
-    // }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -95,7 +76,6 @@ export function RegistrationForm() {
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
-          username: formData.username,
         }),
       });
 
@@ -104,12 +84,8 @@ export function RegistrationForm() {
       if (!response.ok) {
         // Handle specific error cases
         if (response.status === 409) {
-          // Username or email already exists
-          if (data.message.includes("Username")) {
-            setErrors((prev) => ({ ...prev, username: data.message }));
-          } else {
-            setErrors((prev) => ({ ...prev, email: data.message }));
-          }
+          // Email already exists
+          setErrors((prev) => ({ ...prev, email: data.message }));
         } else if (data.details) {
           // Validation errors
           setErrors(data.details);
@@ -119,9 +95,9 @@ export function RegistrationForm() {
         return;
       }
 
-      // Registration successful - redirect to verify email page
-      // Supabase sends a confirmation email automatically
-      window.location.href = "/auth/verify-email";
+      // Registration successful - redirect to login page
+      // Email confirmation is disabled, so users can log in immediately
+      window.location.href = "/auth/login?registered=true";
     } catch {
       setFormError("Connection error. Please try again.");
     } finally {
@@ -156,28 +132,6 @@ export function RegistrationForm() {
             aria-describedby={errors.email ? "email-error" : undefined}
           />
           {errors.email && <FormFieldError error={errors.email} />}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="username" className="text-foreground">
-            Username
-          </Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder="username123"
-            value={formData.username}
-            onChange={(e) => handleInputChange("username", e.target.value)}
-            onBlur={handleUsernameBlur}
-            className={`bg-background text-foreground border-input focus:border-primary ${
-              errors.username ? "border-destructive" : ""
-            }`}
-            disabled={isLoading}
-            aria-invalid={!!errors.username}
-            aria-describedby={errors.username ? "username-error" : undefined}
-          />
-          {errors.username && <FormFieldError error={errors.username} />}
-          <p className="text-xs text-muted-foreground">3-20 characters, letters, numbers, and underscores only</p>
         </div>
 
         <div className="space-y-2">

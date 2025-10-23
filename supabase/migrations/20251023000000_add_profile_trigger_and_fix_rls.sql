@@ -27,11 +27,20 @@ SET search_path = public
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- Insert new profile with username from user metadata
+  -- Insert new profile with auto-generated username from email
+  -- Username is email prefix (part before @) with a unique suffix if needed
   INSERT INTO public.profiles (id, username)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || substr(NEW.id::text, 1, 8))
+    -- Extract email prefix and add first 4 chars of UUID for uniqueness
+    LOWER(
+      REGEXP_REPLACE(
+        SPLIT_PART(COALESCE(NEW.email, 'user'), '@', 1),
+        '[^a-zA-Z0-9]',
+        '',
+        'g'
+      )
+    ) || '_' || substr(NEW.id::text, 1, 4)
   );
   RETURN NEW;
 EXCEPTION
@@ -71,7 +80,7 @@ DECLARE
   affected_count INTEGER := 0;
 BEGIN
   FOR user_record IN
-    SELECT au.id, au.raw_user_meta_data
+    SELECT au.id, au.email
     FROM auth.users au
     LEFT JOIN public.profiles p ON p.id = au.id
     WHERE p.id IS NULL
@@ -80,10 +89,15 @@ BEGIN
       INSERT INTO public.profiles (id, username)
       VALUES (
         user_record.id,
-        COALESCE(
-          user_record.raw_user_meta_data->>'username',
-          'user_' || substr(user_record.id::text, 1, 8)
-        )
+        -- Same auto-generation logic as trigger
+        LOWER(
+          REGEXP_REPLACE(
+            SPLIT_PART(COALESCE(user_record.email, 'user'), '@', 1),
+            '[^a-zA-Z0-9]',
+            '',
+            'g'
+          )
+        ) || '_' || substr(user_record.id::text, 1, 4)
       );
       affected_count := affected_count + 1;
     EXCEPTION

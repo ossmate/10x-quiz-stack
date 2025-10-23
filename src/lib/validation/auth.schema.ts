@@ -11,32 +11,9 @@ export const passwordSchema = z
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[0-9]/, "Password must contain at least one number");
 
-// Username validation
-export const usernameSchema = z
-  .string()
-  .min(3, "Username must be at least 3 characters")
-  .max(20, "Username must be at most 20 characters")
-  .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores");
-
-// Email or Username validation (for login)
-export const emailOrUsernameSchema = z
-  .string()
-  .min(1, "Email or username is required")
-  .refine(
-    (value) => {
-      // Check if it's a valid email OR a valid username
-      const isEmail = z.string().email().safeParse(value).success;
-      const isUsername = /^[a-zA-Z0-9_]{3,20}$/.test(value);
-      return isEmail || isUsername;
-    },
-    {
-      message: "Please enter a valid email or username",
-    }
-  );
-
 // Login schema
 export const loginSchema = z.object({
-  emailOrUsername: emailOrUsernameSchema,
+  email: emailSchema,
   password: z.string().min(1, "Password is required"),
 });
 
@@ -48,7 +25,6 @@ export const registerSchema = z
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Password confirmation is required"),
-    username: usernameSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

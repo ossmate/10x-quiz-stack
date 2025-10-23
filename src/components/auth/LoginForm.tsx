@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { loginSchema, type LoginInput } from "../../lib/validation/auth.schema";
 import { AuthContainer } from "./AuthContainer";
 import { FormFieldError } from "./FormFieldError";
@@ -13,12 +13,23 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginInput>({
-    emailOrUsername: "",
+    email: "",
     password: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
   const [formError, setFormError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for registration success message
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('registered') === 'true') {
+      setSuccessMessage("Registration successful! You can now log in with your email and password.");
+      // Clean up URL
+      window.history.replaceState({}, '', '/auth/login');
+    }
+  }, []);
 
   const handleInputChange = (field: keyof LoginInput, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -28,6 +39,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     }
     if (formError) {
       setFormError("");
+    }
+    if (successMessage) {
+      setSuccessMessage("");
     }
   };
 
@@ -97,6 +111,12 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   return (
     <AuthContainer title="Welcome back" description="Sign in to your account to continue">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {successMessage && (
+          <Alert className="bg-primary/10 border-primary">
+            <AlertDescription className="text-primary">{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
         {formError && (
           <Alert variant="destructive" className="bg-destructive/10 border-destructive">
             <AlertDescription className="text-destructive">{formError}</AlertDescription>
@@ -104,23 +124,23 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="emailOrUsername" className="text-foreground">
-            Email or Username
+          <Label htmlFor="email" className="text-foreground">
+            Email
           </Label>
           <Input
-            id="emailOrUsername"
-            type="text"
-            placeholder="your@email.com or username"
-            value={formData.emailOrUsername}
-            onChange={(e) => handleInputChange("emailOrUsername", e.target.value)}
+            id="email"
+            type="email"
+            placeholder="your@email.com"
+            value={formData.email}
+            onChange={(e) => handleInputChange("email", e.target.value)}
             className={`bg-background text-foreground border-input focus:border-primary ${
-              errors.emailOrUsername ? "border-destructive" : ""
+              errors.email ? "border-destructive" : ""
             }`}
             disabled={isLoading}
-            aria-invalid={!!errors.emailOrUsername}
-            aria-describedby={errors.emailOrUsername ? "emailOrUsername-error" : undefined}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
           />
-          {errors.emailOrUsername && <FormFieldError error={errors.emailOrUsername} />}
+          {errors.email && <FormFieldError error={errors.email} />}
         </div>
 
         <div className="space-y-2">

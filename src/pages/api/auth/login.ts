@@ -1,16 +1,14 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 import { loginSchema } from "../../../lib/validation/auth.schema.ts";
 import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
-import type { Database } from "../../../db/database.types.ts";
 
 export const prerender = false;
 
 /**
  * POST /api/auth/login
- * Authenticates a user with email/username and password
+ * Authenticates a user with email and password
  *
- * @body { emailOrUsername: string, password: string }
+ * @body { email: string, password: string }
  * @returns 200 OK - Login successful
  * @returns 400 Bad Request - Validation error
  * @returns 401 Unauthorized - Invalid credentials
@@ -46,88 +44,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    const { emailOrUsername, password } = validationResult.data;
+    const { email, password } = validationResult.data;
 
     // Create Supabase server instance for authentication
     const supabase = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
-
-    // Determine if input is email or username
-    let email = emailOrUsername;
-    const isEmail = emailOrUsername.includes("@");
-
-    // If it's a username, look up the email from profiles table
-    if (!isEmail) {
-      // Query profiles table - public read access enabled via RLS policy
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", emailOrUsername)
-        .single();
-
-      if (profileError || !profileData) {
-        // Don't reveal if username exists - return generic error
-        return new Response(
-          JSON.stringify({
-            error: "Authentication Failed",
-            message: "Invalid email or password",
-          }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      // Create service role client only for admin.getUserById (still needed)
-      const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (!serviceRoleKey) {
-        console.error("Service role key not configured");
-        return new Response(
-          JSON.stringify({
-            error: "Configuration Error",
-            message: "Server configuration error",
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      const supabaseAdmin = createClient<Database>(import.meta.env.SUPABASE_URL, serviceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      });
-
-      // Get the email associated with this user ID (requires admin API)
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
-
-      if (userError || !userData.user || !userData.user.email) {
-        return new Response(
-          JSON.stringify({
-            error: "Authentication Failed",
-            message: "Invalid email or password",
-          }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      email = userData.user.email;
-    }
 
     // Sign in with email and password
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -182,16 +105,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Get user profile (including username)
-    const { data: profile } = await supabase.from("profiles").select("username").eq("id", data.user.id).single();
-
     return new Response(
       JSON.stringify({
         message: "Login successful",
         user: {
           id: data.user.id,
           email: data.user.email,
-          username: profile?.username || email.split("@")[0], // Fallback to email prefix if no profile
         },
       }),
       {

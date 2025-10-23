@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    const { email, password, username } = validationResult.data;
+    const { email, password } = validationResult.data;
 
     // Create Supabase server instance
     const supabase = createSupabaseServerInstance({
@@ -51,34 +51,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: request.headers,
     });
 
-    // Check if username already exists
-    const { data: existingProfile } = await supabase.from("profiles").select("id").eq("username", username).single();
-
-    if (existingProfile) {
-      return new Response(
-        JSON.stringify({
-          error: "Conflict",
-          message: "Username already taken",
-        }),
-        {
-          status: 409,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
     // Register user with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          username,
-        },
         // Email confirmation disabled - users can log in immediately
-        // Username is stored in metadata and extracted by database trigger
+        // Profile created automatically via database trigger
       },
     });
 
