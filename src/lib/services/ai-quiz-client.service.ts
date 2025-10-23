@@ -5,6 +5,7 @@ import { convertAIPreviewToQuizDetail } from "../utils/quiz-conversion";
  * Client-side wrapper for the AI Quiz Generator Service
  * Handles the API communication and error handling for the frontend
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AIQuizClientService {
   /**
    * Generate a quiz using AI based on a prompt

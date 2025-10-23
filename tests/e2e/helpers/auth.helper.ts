@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { type Page, type BrowserContext } from "@playwright/test";
 import { LoginPage } from "../pages/login.page";
 

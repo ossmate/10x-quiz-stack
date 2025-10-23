@@ -94,7 +94,9 @@ export function QuizPreview({ quiz, actions, showCorrectAnswers = false, classNa
             </div>
           ))
         ) : (
-          <div className="text-center py-8 text-muted-foreground">This quiz doesn't contain any questions yet.</div>
+          <div className="text-center py-8 text-muted-foreground">
+            This quiz doesn&apos;t contain any questions yet.
+          </div>
         )}
       </div>
 

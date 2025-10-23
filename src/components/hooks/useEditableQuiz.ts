@@ -148,21 +148,24 @@ export function useEditableQuiz(initialQuiz: QuizDetailDTO) {
   /**
    * Update an option field
    */
-  const updateOptionField = useCallback((questionId: string, optionId: string, field: string, value: any) => {
-    setEditableQuiz((prev) => ({
-      ...prev,
-      questions:
-        prev.questions?.map((q) =>
-          q.id === questionId
-            ? {
-                ...q,
-                options: q.options?.map((o) => (o.id === optionId ? { ...o, [field]: value } : o)) || [],
-              }
-            : q
-        ) || [],
-      isDirty: true,
-    }));
-  }, []);
+  const updateOptionField = useCallback(
+    (questionId: string, optionId: string, field: string, value: string | boolean) => {
+      setEditableQuiz((prev) => ({
+        ...prev,
+        questions:
+          prev.questions?.map((q) =>
+            q.id === questionId
+              ? {
+                  ...q,
+                  options: q.options?.map((o) => (o.id === optionId ? { ...o, [field]: value } : o)) || [],
+                }
+              : q
+          ) || [],
+        isDirty: true,
+      }));
+    },
+    []
+  );
 
   /**
    * Add a new question to the quiz

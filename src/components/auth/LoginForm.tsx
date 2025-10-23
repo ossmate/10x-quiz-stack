@@ -24,10 +24,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   // Check for registration success message
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('registered') === 'true') {
+    if (params.get("registered") === "true") {
       setSuccessMessage("Registration successful! You can now log in with your email and password.");
       // Clean up URL
-      window.history.replaceState({}, '', '/auth/login');
+      window.history.replaceState({}, "", "/auth/login");
     }
   }, []);
 

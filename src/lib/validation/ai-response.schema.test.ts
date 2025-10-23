@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, expect, it } from "vitest";
 
 import { aiQuizResponseSchema, parseAndValidateAIResponse } from "./ai-response.schema.ts";
 

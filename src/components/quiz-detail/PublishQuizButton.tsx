@@ -57,7 +57,7 @@ export function PublishQuizButton({ quiz, onPublish }: PublishQuizButtonProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Publish Quiz?</AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
-            <p>You are about to publish "{quiz.title}" and make it publicly accessible.</p>
+            <p>You are about to publish &quot;{quiz.title}&quot; and make it publicly accessible.</p>
             <div className="rounded-md bg-muted p-3 text-sm">
               <p className="font-medium text-foreground mb-2">Quiz Summary:</p>
               <ul className="space-y-1 text-muted-foreground">
@@ -68,11 +68,11 @@ export function PublishQuizButton({ quiz, onPublish }: PublishQuizButtonProps) {
                   • Status will change to: <span className="font-medium text-foreground">Public</span>
                 </li>
                 <li>• Anyone will be able to view and take this quiz</li>
-                <li>• You'll need to unpublish before editing</li>
+                <li>• You&apos;ll need to unpublish before editing</li>
               </ul>
             </div>
             <p className="text-xs text-muted-foreground">
-              Once published, you won't be able to edit the quiz until you unpublish it.
+              Once published, you won&apos;t be able to edit the quiz until you unpublish it.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -908,9 +908,6 @@ export class QuizService {
       return;
     }
 
-    // Get unique user IDs
-    const userIds = [...new Set(quizzes.map((q) => q.user_id))];
-
     try {
       // Fetch user emails from auth.users using admin API
       const { data, error } = await supabase.auth.admin.listUsers();

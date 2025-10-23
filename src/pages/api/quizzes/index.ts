@@ -60,7 +60,6 @@ export const GET: APIRoute = async ({ url, cookies, request }) => {
       const errors = validationResult.error.errors.map((err) => ({
         field: err.path.join("."),
         message: err.message,
-        received: err.input,
       }));
 
       // Log validation errors for debugging
@@ -75,7 +74,6 @@ export const GET: APIRoute = async ({ url, cookies, request }) => {
           error: "Validation Failed",
           message: "Invalid query parameters",
           details: errors,
-          received: queryParams,
         }),
         {
           status: 400,
@@ -231,8 +229,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       console.error("Failed to create quiz:", {
         message: errorMessage,
         stack: errorStack,
-        supabaseUrl: supabaseUrl,
-        hasServiceRoleKey: !!serviceRoleKey,
       });
 
       return new Response(
