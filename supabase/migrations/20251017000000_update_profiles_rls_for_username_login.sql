@@ -48,19 +48,5 @@ ON profiles
 FOR DELETE
 USING (auth.uid() = id);
 
--- Step 6: Add helpful comments
-COMMENT ON POLICY "Public username lookup" ON profiles IS
-  'Allows public read access to id and username for login functionality. ' ||
-  'This is standard practice for social platforms and does not expose sensitive data.';
-
-COMMENT ON POLICY "Users can update own profile" ON profiles IS
-  'Users can only update their own profile. Prevents unauthorized modifications.';
-
-COMMENT ON POLICY "Service role can insert profiles" ON profiles IS
-  'Allows service role to create profiles during registration. Bypasses RLS for initial profile creation.';
-
-COMMENT ON POLICY "Users can delete own profile" ON profiles IS
-  'Allows users to delete their own profile. Part of account deletion flow.';
-
 -- Verification query (run after migration)
 -- SELECT * FROM pg_policies WHERE tablename = 'profiles';

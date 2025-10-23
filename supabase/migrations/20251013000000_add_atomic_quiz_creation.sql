@@ -5,34 +5,7 @@
 -- Author: Database Migration System
 -- Date: 2025-10-13
 -- ============================================================================
-
--- Type definitions for the atomic quiz creation function
-create type quiz_option_input as (
-  content text,
-  is_correct boolean,
-  position integer
-);
-
-create type quiz_question_input as (
-  content text,
-  explanation text,
-  position integer,
-  options quiz_option_input[]
-);
-
-create type quiz_input as (
-  title text,
-  description text,
-  visibility text,
-  source text,
-  ai_model text,
-  ai_prompt text,
-  ai_temperature numeric
-);
-
--- ============================================================================
--- ATOMIC QUIZ CREATION FUNCTION
--- ============================================================================
+-- Note: Function uses JSONB for flexibility instead of custom types
 -- This function creates a complete quiz with all questions and options
 -- in a single atomic transaction. If any part fails, all changes are rolled back.
 -- ============================================================================
@@ -216,14 +189,3 @@ exception
     raise exception 'Failed to create quiz atomically: %', sqlerrm;
 end;
 $$ language plpgsql security definer;
-
--- Grant execute permission to authenticated users
-grant execute on function create_quiz_atomic(uuid, jsonb) to authenticated;
-grant execute on function create_quiz_atomic(uuid, jsonb) to service_role;
-
--- Add helpful comment
-comment on function create_quiz_atomic is 'Atomically creates a complete quiz with questions and options in a single transaction';
-
--- ============================================================================
--- MIGRATION COMPLETE
--- ============================================================================

@@ -77,8 +77,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         data: {
           username,
         },
-        // Email confirmation is required by default in Supabase
-        // The user will receive an email with a confirmation link
+        // Email confirmation disabled - users can log in immediately
+        // Username is stored in metadata and extracted by database trigger
       },
     });
 
@@ -128,28 +128,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Create profile entry in profiles table
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: data.user.id,
-      username: username,
-    });
-
-    if (profileError) {
-      // Profile creation failed - log error but don't fail registration
-      // User can still log in with email
-      console.error("Profile creation error:", profileError);
-      // Note: In production, you might want to implement cleanup or retry logic
-    }
+    // Note: Profile is automatically created via database trigger (handle_new_user)
+    // See migration: 20251023000000_add_profile_trigger_and_fix_rls.sql
+    // The trigger extracts username from user metadata and creates the profile atomically
 
     return new Response(
       JSON.stringify({
-        message: "Registration successful. Please check your email to verify your account.",
+        message: "Registration successful. You can now log in.",
         user: {
           id: data.user.id,
           email: data.user.email,
         },
-        // Important: Let the frontend know email confirmation is required
-        requiresEmailConfirmation: true,
+        requiresEmailConfirmation: false,
       }),
       {
         status: 201,
