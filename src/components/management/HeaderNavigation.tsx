@@ -20,7 +20,7 @@ export function HeaderNavigation({ currentPath }: HeaderNavigationProps) {
           <div className="flex items-center">
             <a href="/" className="flex items-center text-xl font-bold text-foreground">
               <span className="text-primary">10x</span>
-              <span className="ml-1">Quiz</span>
+              <span className="ml-1">Quiz Stack</span>
             </a>
           </div>
 
