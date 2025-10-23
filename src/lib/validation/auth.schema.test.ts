@@ -2,14 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   changePasswordSchema,
-  emailOrUsernameSchema,
   emailSchema,
   forgotPasswordSchema,
   loginSchema,
   passwordSchema,
   registerSchema,
   resetPasswordSchema,
-  usernameSchema,
 } from "./auth.schema.ts";
 
 describe("emailSchema", () => {
@@ -183,184 +181,12 @@ describe("passwordSchema", () => {
   });
 });
 
-describe("usernameSchema", () => {
-  describe("valid usernames", () => {
-    it("should accept username with letters only", () => {
-      const result = usernameSchema.safeParse("username");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with letters and numbers", () => {
-      const result = usernameSchema.safeParse("user123");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with underscores", () => {
-      const result = usernameSchema.safeParse("user_name");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with exactly 3 characters", () => {
-      const result = usernameSchema.safeParse("abc");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with exactly 20 characters", () => {
-      const result = usernameSchema.safeParse("a".repeat(20));
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept mixed case username", () => {
-      const result = usernameSchema.safeParse("UserName");
-
-      expect(result.success).toBe(true);
-    });
-  });
-
-  describe("invalid usernames", () => {
-    it("should reject username with less than 3 characters", () => {
-      const result = usernameSchema.safeParse("ab");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Username must be at least 3 characters");
-      }
-    });
-
-    it("should reject username with more than 20 characters", () => {
-      const result = usernameSchema.safeParse("a".repeat(21));
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Username must be at most 20 characters");
-      }
-    });
-
-    it("should reject username with spaces", () => {
-      const result = usernameSchema.safeParse("user name");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Username can only contain letters, numbers, and underscores");
-      }
-    });
-
-    it("should reject username with special characters", () => {
-      const result = usernameSchema.safeParse("user@name");
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should reject username with hyphens", () => {
-      const result = usernameSchema.safeParse("user-name");
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should reject username with dots", () => {
-      const result = usernameSchema.safeParse("user.name");
-
-      expect(result.success).toBe(false);
-    });
-  });
-});
-
-describe("emailOrUsernameSchema", () => {
-  describe("valid inputs", () => {
-    it("should accept valid email", () => {
-      const result = emailOrUsernameSchema.safeParse("user@example.com");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept valid username", () => {
-      const result = emailOrUsernameSchema.safeParse("username");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with numbers", () => {
-      const result = emailOrUsernameSchema.safeParse("user123");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with underscores", () => {
-      const result = emailOrUsernameSchema.safeParse("user_name");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept email with subdomain", () => {
-      const result = emailOrUsernameSchema.safeParse("user@mail.example.com");
-
-      expect(result.success).toBe(true);
-    });
-  });
-
-  describe("invalid inputs", () => {
-    it("should reject empty string", () => {
-      const result = emailOrUsernameSchema.safeParse("");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Email or username is required");
-      }
-    });
-
-    it("should reject username with less than 3 characters", () => {
-      const result = emailOrUsernameSchema.safeParse("ab");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Please enter a valid email or username");
-      }
-    });
-
-    it("should reject username with more than 20 characters", () => {
-      const result = emailOrUsernameSchema.safeParse("a".repeat(21));
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should reject username with special characters", () => {
-      const result = emailOrUsernameSchema.safeParse("user@name");
-
-      // This is neither a valid email nor username
-      const result2 = emailOrUsernameSchema.safeParse("user#name");
-      expect(result2.success).toBe(false);
-    });
-
-    it("should reject invalid email format", () => {
-      const result = emailOrUsernameSchema.safeParse("user@");
-
-      expect(result.success).toBe(false);
-    });
-  });
-});
-
 describe("loginSchema", () => {
   describe("valid login", () => {
     it("should accept valid email and password", () => {
       const validLogin = {
-        emailOrUsername: "user@example.com",
+        email: "user@example.com",
         password: "Password123",
-      };
-
-      const result = loginSchema.safeParse(validLogin);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept valid username and password", () => {
-      const validLogin = {
-        emailOrUsername: "username",
-        password: "anypassword",
       };
 
       const result = loginSchema.safeParse(validLogin);
@@ -370,7 +196,7 @@ describe("loginSchema", () => {
 
     it("should accept any password string for login", () => {
       const validLogin = {
-        emailOrUsername: "user@example.com",
+        email: "user@example.com",
         password: "weak",
       };
 
@@ -381,7 +207,7 @@ describe("loginSchema", () => {
   });
 
   describe("invalid login", () => {
-    it("should reject missing emailOrUsername", () => {
+    it("should reject missing email", () => {
       const invalidLogin = { password: "Password123" };
 
       const result = loginSchema.safeParse(invalidLogin);
@@ -390,7 +216,7 @@ describe("loginSchema", () => {
     });
 
     it("should reject missing password", () => {
-      const invalidLogin = { emailOrUsername: "user@example.com" };
+      const invalidLogin = { email: "user@example.com" };
 
       const result = loginSchema.safeParse(invalidLogin);
 
@@ -399,7 +225,7 @@ describe("loginSchema", () => {
 
     it("should reject empty password", () => {
       const invalidLogin = {
-        emailOrUsername: "user@example.com",
+        email: "user@example.com",
         password: "",
       };
 
@@ -409,6 +235,17 @@ describe("loginSchema", () => {
       if (!result.success) {
         expect(result.error.errors[0].message).toBe("Password is required");
       }
+    });
+
+    it("should reject invalid email", () => {
+      const invalidLogin = {
+        email: "invalid-email",
+        password: "Password123",
+      };
+
+      const result = loginSchema.safeParse(invalidLogin);
+
+      expect(result.success).toBe(false);
     });
   });
 });
@@ -420,20 +257,6 @@ describe("registerSchema", () => {
         email: "user@example.com",
         password: "Password123",
         confirmPassword: "Password123",
-        username: "username",
-      };
-
-      const result = registerSchema.safeParse(validRegistration);
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should accept username with underscores", () => {
-      const validRegistration = {
-        email: "user@example.com",
-        password: "Password123",
-        confirmPassword: "Password123",
-        username: "user_name",
       };
 
       const result = registerSchema.safeParse(validRegistration);
@@ -448,7 +271,6 @@ describe("registerSchema", () => {
         email: "user@example.com",
         password: "Password123",
         confirmPassword: "DifferentPass123",
-        username: "username",
       };
 
       const result = registerSchema.safeParse(invalidRegistration);
@@ -465,7 +287,6 @@ describe("registerSchema", () => {
         email: "invalid-email",
         password: "Password123",
         confirmPassword: "Password123",
-        username: "username",
       };
 
       const result = registerSchema.safeParse(invalidRegistration);
@@ -478,20 +299,6 @@ describe("registerSchema", () => {
         email: "user@example.com",
         password: "weak",
         confirmPassword: "weak",
-        username: "username",
-      };
-
-      const result = registerSchema.safeParse(invalidRegistration);
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should reject invalid username", () => {
-      const invalidRegistration = {
-        email: "user@example.com",
-        password: "Password123",
-        confirmPassword: "Password123",
-        username: "ab",
       };
 
       const result = registerSchema.safeParse(invalidRegistration);
@@ -503,7 +310,6 @@ describe("registerSchema", () => {
       const invalidRegistration = {
         email: "user@example.com",
         password: "Password123",
-        username: "username",
       };
 
       const result = registerSchema.safeParse(invalidRegistration);
