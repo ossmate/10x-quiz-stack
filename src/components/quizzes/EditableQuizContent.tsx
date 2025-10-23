@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { QuizDetailDTO, QuestionWithOptionsDTO, OptionDTO, QuizUpdateDTO } from "../../types";
+import { useStickyFooter } from "../hooks/ui/useStickyFooter";
 
 // Interface for component props
 interface EditableQuizContentProps {
@@ -52,32 +53,8 @@ export function EditableQuizContent({
   // State for tracking overall form validity
   const [isValid, setIsValid] = useState(true);
 
-  // State to track if footer should be sticky
-  const [isFooterSticky, setIsFooterSticky] = useState(true);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Setup IntersectionObserver to detect when user reaches the bottom
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // When sentinel is visible, footer should not be sticky
-        setIsFooterSticky(!entry.isIntersecting);
-      },
-      {
-        // Trigger when sentinel is 100px from viewport
-        rootMargin: "100px",
-      }
-    );
-
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // Sticky footer behavior using IntersectionObserver
+  const { isSticky: isFooterSticky, sentinelRef } = useStickyFooter();
 
   // Validate quiz on any changes
   useEffect(() => {
