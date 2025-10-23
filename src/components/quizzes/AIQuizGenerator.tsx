@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React from "react";
 import { toast } from "sonner";
 import { GenerationForm } from "./GenerationForm";
 import { LoadingIndicator } from "./LoadingIndicator";
@@ -6,6 +6,7 @@ import { QuizPreview } from "./QuizPreview";
 import { EditableQuizContent } from "./EditableQuizContent";
 import { useAIQuizGeneration } from "../hooks/useAIQuizGeneration";
 import { useEditableQuiz } from "../hooks/useEditableQuiz";
+import { useStickyFooter } from "../hooks/ui/useStickyFooter";
 import type { QuizDetailDTO, AIQuizGenerationDTO, QuizUpdateDTO } from "../../types";
 
 /**
@@ -15,32 +16,10 @@ export function AIQuizGenerator() {
   // Use our custom hooks for state management
   const { state, generateQuiz, resetGeneration, toggleEdit, updateGeneratedQuiz, publishQuiz } = useAIQuizGeneration();
 
-  // State to track if footer should be sticky
-  const [isFooterSticky, setIsFooterSticky] = useState(true);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Setup IntersectionObserver to detect when user reaches the bottom
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // When sentinel is visible, footer should not be sticky
-        setIsFooterSticky(!entry.isIntersecting);
-      },
-      {
-        // Trigger when sentinel is 100px from viewport
-        rootMargin: "100px",
-      }
-    );
-
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [state.status, state.isEditing]);
+  // Sticky footer behavior using IntersectionObserver
+  const { isSticky: isFooterSticky, sentinelRef } = useStickyFooter({
+    dependencies: [state.status, state.isEditing],
+  });
 
   // Create a dummy quiz for when we don't have a real quiz to edit
   // This ensures we always call the useEditableQuiz hook per React's rules
