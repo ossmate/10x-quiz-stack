@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { QuizDetailDTO, QuestionWithOptionsDTO, OptionDTO, QuizUpdateDTO } from "../../types";
 import { useStickyFooter } from "../hooks/ui/useStickyFooter";
 
@@ -64,22 +64,8 @@ export function EditableQuizContent({
   // State to track the newly added question for highlighting
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
 
-  // Validate quiz on any changes
-  useEffect(() => {
-    validateQuiz();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableQuiz.title, editableQuiz.description, editableQuiz.questions]);
-
-  // Notify parent of changes
-  useEffect(() => {
-    if (onChange) {
-      onChange(editableQuiz);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableQuiz.title, editableQuiz.description, editableQuiz.questions]);
-
   // Validate the entire quiz and update validation state
-  const validateQuiz = () => {
+  const validateQuiz = useCallback(() => {
     const errors: EditableQuizData["validationErrors"] = {};
 
     // Validate title
@@ -160,7 +146,19 @@ export function EditableQuizContent({
     setIsValid(!hasErrors);
 
     return !hasErrors;
-  };
+  }, [editableQuiz]);
+
+  // Validate quiz on any changes
+  useEffect(() => {
+    validateQuiz();
+  }, [validateQuiz]);
+
+  // Notify parent of changes
+  useEffect(() => {
+    if (onChange) {
+      onChange(editableQuiz);
+    }
+  }, [onChange, editableQuiz]);
 
   // Handle saving the quiz
   const handleSave = () => {
