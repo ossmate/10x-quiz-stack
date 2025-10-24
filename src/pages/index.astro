@@ -1,14 +1,58 @@
 ---
 import ManagementLayout from "../layouts/ManagementLayout.astro";
-import { DashboardContainer } from "../components/Dashboard/DashboardContainer.tsx";
+import { DashboardWithProvider } from "../components/Dashboard/DashboardWithProvider.tsx";
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
+import type { QuizListResponse } from "../types.ts";
 
 // Set prerender to false as this page requires authentication
 export const prerender = false;
 
 // Note: Authentication will be handled by middleware
 // If user is not authenticated, they will be redirected to /login
+
+// Server-side data fetching for initial load optimization
+let initialMyQuizzes: QuizListResponse | null = null;
+
+try {
+  const supabaseClient = createSupabaseServerInstance({
+    cookies: Astro.cookies,
+    headers: Astro.request.headers,
+  });
+
+  // Use getUser() instead of getSession() for security
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+
+  if (user) {
+    // Fetch user's quizzes server-side with owned=true parameter
+    const queryParams = new URLSearchParams({
+      page: "1",
+      limit: "10",
+      sort: "created_at",
+      order: "desc",
+      owned: "true",
+    });
+
+    const response = await fetch(`${Astro.url.origin}/api/quizzes?${queryParams}`, {
+      headers: {
+        Cookie: Astro.request.headers.get("Cookie") || "",
+      },
+    });
+
+    if (response.ok) {
+      initialMyQuizzes = await response.json();
+    } else {
+      // eslint-disable-next-line no-console
+      console.error("SSR: Failed to fetch my quizzes:", response.status);
+    }
+  }
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.error("SSR: Error fetching initial data:", error);
+}
 ---
 
 <ManagementLayout title="Dashboard | QuizStack">
-  <DashboardContainer client:load />
+  <DashboardWithProvider client:load initialMyQuizzes={initialMyQuizzes} />
 </ManagementLayout>

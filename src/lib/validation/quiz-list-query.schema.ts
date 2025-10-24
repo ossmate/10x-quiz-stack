@@ -10,6 +10,10 @@ export const quizListQuerySchema = z.object({
   sort: z.enum(["created_at", "title", "updated_at"]).default("created_at"),
   order: z.enum(["asc", "desc"]).default("desc"),
   status: z.enum(["draft", "public", "private", "archived"]).optional(),
+  owned: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((val) => (val === "true" ? true : val === "false" ? false : undefined)),
 });
 
 export type QuizListQuery = z.infer<typeof quizListQuerySchema>;

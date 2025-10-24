@@ -52,6 +52,7 @@ export const GET: APIRoute = async ({ url, cookies, request }) => {
       sort: url.searchParams.get("sort"),
       order: url.searchParams.get("order"),
       status: url.searchParams.get("status") || undefined,
+      owned: url.searchParams.get("owned") || undefined,
     };
 
     const validationResult = quizListQuerySchema.safeParse(queryParams);

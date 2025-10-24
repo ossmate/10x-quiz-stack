@@ -463,32 +463,57 @@ export class QuizService {
    * @throws Error if database operations fail
    */
   async getQuizzes(supabase: SupabaseClientType, userId: string, query: QuizListQuery): Promise<QuizListResponse> {
-    const { page, limit, sort, order, status } = query;
+    const { page, limit, sort, order, status, owned } = query;
 
-    // Build base query filter for access control
-    // User can see: their own quizzes (all statuses) OR public quizzes from others
-    let baseFilter = `user_id.eq.${userId}`;
+    // Build query based on ownership and status filters
+    let countQuery = supabase.from("quizzes").select("*", { count: "exact", head: true }).is("deleted_at", null);
 
-    // If filtering by status
-    if (status) {
-      if (status === "public") {
-        // Show only public quizzes (owned by user OR public from others)
-        baseFilter = `and(status.eq.public,or(user_id.eq.${userId},user_id.neq.${userId}))`;
-      } else {
-        // Show only quizzes with specific status owned by user
-        baseFilter = `and(status.eq.${status},user_id.eq.${userId})`;
+    let dataQuery = supabase.from("quizzes").select("*").is("deleted_at", null);
+
+    // Apply filters based on owned parameter
+    if (owned === true) {
+      // Show only quizzes owned by the user
+      countQuery = countQuery.eq("user_id", userId);
+      dataQuery = dataQuery.eq("user_id", userId);
+
+      // Apply status filter if provided
+      if (status) {
+        countQuery = countQuery.eq("status", status);
+        dataQuery = dataQuery.eq("status", status);
+      }
+    } else if (owned === false) {
+      // Show only quizzes NOT owned by the user (must be public)
+      countQuery = countQuery.neq("user_id", userId).eq("status", "public");
+      dataQuery = dataQuery.neq("user_id", userId).eq("status", "public");
+
+      // Note: status filter is redundant here but we can apply it
+      if (status && status !== "public") {
+        // If requesting non-public quizzes from others, return empty result
+        countQuery = countQuery.eq("user_id", "00000000-0000-0000-0000-000000000000");
+        dataQuery = dataQuery.eq("user_id", "00000000-0000-0000-0000-000000000000");
       }
     } else {
-      // No status filter: show user's quizzes OR public quizzes from others
-      baseFilter = `or(user_id.eq.${userId},status.eq.public)`;
+      // Original behavior: owned is undefined
+      // User can see: their own quizzes (all statuses) OR public quizzes from others
+      if (status) {
+        if (status === "public") {
+          // Show only public quizzes (from anyone)
+          countQuery = countQuery.eq("status", "public");
+          dataQuery = dataQuery.eq("status", "public");
+        } else {
+          // Show only quizzes with specific status owned by user
+          countQuery = countQuery.eq("status", status).eq("user_id", userId);
+          dataQuery = dataQuery.eq("status", status).eq("user_id", userId);
+        }
+      } else {
+        // No status filter: show user's quizzes OR public quizzes from others
+        countQuery = countQuery.or(`user_id.eq.${userId},status.eq.public`);
+        dataQuery = dataQuery.or(`user_id.eq.${userId},status.eq.public`);
+      }
     }
 
     // Count query for total items
-    const { count, error: countError } = await supabase
-      .from("quizzes")
-      .select("*", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .or(baseFilter);
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       throw new Error(`Failed to count quizzes: ${countError.message}`);
@@ -499,11 +524,8 @@ export class QuizService {
 
     const effectivePage = Math.min(Math.max(page, 1), totalPages);
 
-    const { data: quizzes, error: dataError } = await supabase
-      .from("quizzes")
-      .select("*")
-      .is("deleted_at", null)
-      .or(baseFilter)
+    // Data query with pagination
+    const { data: quizzes, error: dataError } = await dataQuery
       .order(sort, { ascending: order === "asc" })
       .range((effectivePage - 1) * limit, effectivePage * limit - 1);
 
@@ -900,6 +922,10 @@ export class QuizService {
    * Enrich quizzes with user email addresses from auth.users
    * Mutates the quiz DTOs in place to add user_email field
    *
+   * Note: This method requires service role permissions. For regular user sessions,
+   * it will gracefully fail and quizzes will not have email addresses.
+   * Consider implementing a separate user profile table if emails are critical.
+   *
    * @param supabase - Supabase client instance
    * @param quizzes - Array of quiz DTOs to enrich
    */
@@ -908,31 +934,11 @@ export class QuizService {
       return;
     }
 
-    try {
-      // Fetch user emails from auth.users using admin API
-      const { data, error } = await supabase.auth.admin.listUsers();
-
-      if (error || !data) {
-        console.warn("Failed to fetch user emails:", error?.message);
-        return;
-      }
-
-      // Create a map of user_id -> email
-      const emailMap = new Map<string, string>();
-      data.users.forEach((user) => {
-        if (user.id && user.email) {
-          emailMap.set(user.id, user.email);
-        }
-      });
-
-      // Add emails to quizzes
-      quizzes.forEach((quiz) => {
-        quiz.user_email = emailMap.get(quiz.user_id);
-      });
-    } catch (error) {
-      console.warn("Error enriching quizzes with user emails:", error);
-      // Don't throw - just log warning and continue without emails
-    }
+    // Skip enrichment - admin.listUsers() requires service role key
+    // which is not available in user session context.
+    // User emails are not critical for quiz display, so we skip this step.
+    // In the future, consider creating a public user_profiles table instead.
+    return;
   }
 
   /**

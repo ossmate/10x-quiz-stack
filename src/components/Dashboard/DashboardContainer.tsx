@@ -7,16 +7,23 @@ import { ErrorAlert } from "./ErrorAlert.tsx";
 import { EmptyState } from "./EmptyState.tsx";
 import { QuizList } from "./QuizList.tsx";
 import { navigate } from "astro:transitions/client";
+import type { QuizListResponse } from "../../types.ts";
+
+interface DashboardContainerProps {
+  initialMyQuizzes?: QuizListResponse;
+}
 
 /**
  * Main dashboard container component that orchestrates the entire dashboard functionality
  * Manages tab state, data fetching, and renders appropriate child components
  *
+ * @param props - Component props including optional SSR initial data
  * @returns DashboardContainer component
  */
-export function DashboardContainer() {
+export function DashboardContainer(props: DashboardContainerProps = {}) {
+  const { initialMyQuizzes } = props;
   const { activeTab, myQuizzes, publicQuizzes, setActiveTab, goToPage, refetchMyQuizzes, refetchPublicQuizzes } =
-    useDashboard();
+    useDashboard({ initialMyQuizzes });
 
   // Get current tab data
   const currentData = activeTab === "my-quizzes" ? myQuizzes : publicQuizzes;
@@ -53,7 +60,8 @@ export function DashboardContainer() {
 
     // Error state
     if (currentData.error) {
-      return <ErrorAlert title="Failed to Load Quizzes" message={currentData.error} onRetry={refetch} />;
+      const errorMessage = currentData.error instanceof Error ? currentData.error.message : String(currentData.error);
+      return <ErrorAlert title="Failed to Load Quizzes" message={errorMessage} onRetry={refetch} />;
     }
 
     // Empty state
