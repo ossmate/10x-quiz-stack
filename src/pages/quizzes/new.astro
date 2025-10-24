@@ -1,10 +1,20 @@
 ---
 import ManagementLayout from "../../layouts/ManagementLayout.astro";
 import { Breadcrumbs } from "../../components/management/Breadcrumbs";
+import { QuizCreator } from "../../components/quizzes/QuizCreator";
+import { Toaster } from "../../components/ui/sonner";
 import type { BreadcrumbItem } from "../../types/management.types";
 
 // Set prerender to false as this page requires authentication
 export const prerender = false;
+
+// Get authenticated user from middleware
+const user = Astro.locals.user;
+
+// Redirect to login if not authenticated (middleware should handle this, but double-check)
+if (!user) {
+  return Astro.redirect(`/auth/login?redirect=${encodeURIComponent("/quizzes/new")}`);
+}
 
 // Define breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
@@ -21,16 +31,9 @@ const breadcrumbs: BreadcrumbItem[] = [
     <p class="text-muted-foreground mt-2">Manually create a quiz by adding questions and answers</p>
   </div>
 
-  <div class="bg-card rounded-lg shadow-md p-6">
-    <div class="text-center py-12">
-      <p class="text-muted-foreground mb-4">Manual quiz creation form coming soon...</p>
-      <p class="text-sm text-muted-foreground">For now, you can use the AI Quiz Generator</p>
-      <a
-        href="/quizzes/ai/generate"
-        class="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        Generate Quiz with AI
-      </a>
-    </div>
-  </div>
+  <!-- Quiz Creator Component -->
+  <QuizCreator client:only="react" userId={user.id} />
+
+  <!-- Toast Notifications -->
+  <Toaster client:only="react" />
 </ManagementLayout>
