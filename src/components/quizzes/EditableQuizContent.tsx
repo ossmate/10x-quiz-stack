@@ -7,6 +7,7 @@ interface EditableQuizContentProps {
   quiz: QuizDetailDTO;
   onSave: (updatedQuiz: QuizUpdateDTO) => void;
   onCancel: () => void;
+  onChange?: (updatedQuiz: QuizDetailDTO) => void;
   saveButtonText?: string;
   cancelButtonText?: string;
   className?: string;
@@ -38,6 +39,7 @@ export function EditableQuizContent({
   quiz,
   onSave,
   onCancel,
+  onChange,
   saveButtonText = "Save Changes",
   cancelButtonText = "Cancel",
   className = "",
@@ -65,6 +67,15 @@ export function EditableQuizContent({
   // Validate quiz on any changes
   useEffect(() => {
     validateQuiz();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableQuiz.title, editableQuiz.description, editableQuiz.questions]);
+
+  // Notify parent of changes
+  useEffect(() => {
+    if (onChange) {
+      onChange(editableQuiz);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editableQuiz.title, editableQuiz.description, editableQuiz.questions]);
 
   // Validate the entire quiz and update validation state
@@ -122,12 +133,13 @@ export function EditableQuizContent({
 
         // Add question errors to the errors object if any exist
         if (questionErrors.content || questionErrors.options) {
+          if (!errors.questions) errors.questions = {};
           errors.questions[question.id] = questionErrors;
         }
       });
 
       // Remove questions object if no errors
-      if (Object.keys(errors.questions).length === 0) {
+      if (errors.questions && Object.keys(errors.questions).length === 0) {
         delete errors.questions;
       }
     }

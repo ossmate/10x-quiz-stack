@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useQuizList } from "./useQuizList.ts";
+import { useState, useEffect, useCallback } from "react";
+import { useQuizListQuery } from "./useQuizListQuery.ts";
 import type { TabType } from "../types/dashboard.types.ts";
+import type { QuizListResponse } from "../types.ts";
 
 /**
  * Return type for useDashboard hook
  */
 interface UseDashboardReturn {
   activeTab: TabType;
-  myQuizzes: ReturnType<typeof useQuizList>;
-  publicQuizzes: ReturnType<typeof useQuizList>;
+  myQuizzes: ReturnType<typeof useQuizListQuery>;
+  publicQuizzes: ReturnType<typeof useQuizListQuery>;
   currentUserId: string | null;
   setActiveTab: (tab: TabType) => void;
   goToPage: (page: number) => void;
@@ -17,13 +18,19 @@ interface UseDashboardReturn {
   dismissError: (tab: TabType) => void;
 }
 
+interface UseDashboardProps {
+  initialMyQuizzes?: QuizListResponse;
+}
+
 /**
  * Main dashboard state management hook
  * Coordinates tab switching, pagination, and data fetching for both quiz lists
  *
+ * @param props - Dashboard props including optional initial data for SSR
  * @returns Dashboard state and actions
  */
-export function useDashboard(): UseDashboardReturn {
+export function useDashboard(props: UseDashboardProps = {}): UseDashboardReturn {
+  const { initialMyQuizzes } = props;
   const [activeTab, setActiveTab] = useState<TabType>("my-quizzes");
   const [myQuizzesPage, setMyQuizzesPage] = useState(1);
   const [publicQuizzesPage, setPublicQuizzesPage] = useState(1);
@@ -61,52 +68,22 @@ export function useDashboard(): UseDashboardReturn {
     fetchUser();
   }, []);
 
-  // Fetch My Quizzes (all quizzes, will be filtered by user_id on backend)
-  const myQuizzesQuery = useQuizList({
+  // Fetch My Quizzes using server-side filtering (owned=true)
+  const myQuizzesQuery = useQuizListQuery({
+    owned: true,
     page: myQuizzesPage,
     limit: 10,
-    enabled: activeTab === "my-quizzes" && currentUserId !== null,
+    enabled: true,
+    initialData: initialMyQuizzes,
   });
 
-  // Fetch Public Quizzes
-  const publicQuizzesQuery = useQuizList({
+  // Fetch Public Quizzes - only enabled when tab is active (lazy loading)
+  const publicQuizzesQuery = useQuizListQuery({
     status: "public",
     page: publicQuizzesPage,
     limit: 10,
     enabled: activeTab === "public-quizzes",
   });
-
-  // Filter My Quizzes by current user ID (client-side filtering)
-  // Note: This is a temporary solution until backend adds 'owned=true' parameter
-  const filteredMyQuizzes = useMemo(() => {
-    if (!myQuizzesQuery.data || !currentUserId) {
-      return myQuizzesQuery;
-    }
-
-    const filteredQuizzes = myQuizzesQuery.data.quizzes.filter((quiz) => quiz.user_id === currentUserId);
-
-    // Debug logging for development
-    // eslint-disable-next-line no-console
-    console.log("Filtering My Quizzes:", {
-      totalQuizzes: myQuizzesQuery.data.quizzes.length,
-      currentUserId,
-      filteredCount: filteredQuizzes.length,
-      sampleUserIds: myQuizzesQuery.data.quizzes.slice(0, 3).map((q) => q.user_id),
-    });
-
-    return {
-      ...myQuizzesQuery,
-      data: {
-        ...myQuizzesQuery.data,
-        quizzes: filteredQuizzes,
-        pagination: {
-          ...myQuizzesQuery.data.pagination,
-          totalItems: filteredQuizzes.length,
-          totalPages: Math.ceil(filteredQuizzes.length / (myQuizzesQuery.data.pagination.limit || 10)),
-        },
-      },
-    };
-  }, [myQuizzesQuery, currentUserId]);
 
   /**
    * Handle tab change
@@ -121,7 +98,7 @@ export function useDashboard(): UseDashboardReturn {
   const goToPage = useCallback(
     (page: number) => {
       if (activeTab === "my-quizzes") {
-        const maxPage = filteredMyQuizzes.data?.pagination.totalPages || 1;
+        const maxPage = myQuizzesQuery.data?.pagination.totalPages || 1;
         if (page < 1 || page > maxPage) {
           return;
         }
@@ -134,7 +111,7 @@ export function useDashboard(): UseDashboardReturn {
         setPublicQuizzesPage(page);
       }
     },
-    [activeTab, filteredMyQuizzes.data?.pagination.totalPages, publicQuizzesQuery.data?.pagination.totalPages]
+    [activeTab, myQuizzesQuery.data?.pagination.totalPages, publicQuizzesQuery.data?.pagination.totalPages]
   );
 
   /**
@@ -153,13 +130,10 @@ export function useDashboard(): UseDashboardReturn {
 
   /**
    * Dismiss error for a specific tab
-   * Note: This doesn't clear the error state as it's managed by useQuizList
-   * User will need to retry to clear the error
+   * Triggers a refetch to clear the error and retry
    */
   const dismissError = useCallback(
     (tab: TabType) => {
-      // Error dismissal logic can be implemented here if needed
-      // For now, errors are cleared on retry via refetch
       if (tab === "my-quizzes") {
         refetchMyQuizzes();
       } else {
@@ -171,7 +145,7 @@ export function useDashboard(): UseDashboardReturn {
 
   return {
     activeTab,
-    myQuizzes: filteredMyQuizzes,
+    myQuizzes: myQuizzesQuery,
     publicQuizzes: publicQuizzesQuery,
     currentUserId,
     setActiveTab: handleTabChange,

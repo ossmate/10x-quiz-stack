@@ -46,6 +46,36 @@ function transformToCreateInput(quizData: QuizUpdateDTO & { questions?: QuizDeta
 }
 
 /**
+ * Check if the quiz has any meaningful content that would be lost
+ */
+function hasQuizContent(quiz: QuizDetailDTO): boolean {
+  // Check if title or description has content
+  if (quiz.title.trim() || quiz.description?.trim()) {
+    return true;
+  }
+
+  // Check if any question has content
+  if (quiz.questions && quiz.questions.length > 0) {
+    for (const question of quiz.questions) {
+      if (question.content.trim()) {
+        return true;
+      }
+
+      // Check if any option has content
+      if (question.options && question.options.length > 0) {
+        for (const option of question.options) {
+          if (option.content.trim()) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * QuizCreator - Lightweight wrapper component that initializes an empty quiz
  * and manages the quiz creation lifecycle using EditableQuizContent
  */
@@ -53,6 +83,7 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [shouldPreventUnload, setShouldPreventUnload] = useState(true);
+  const [currentQuiz, setCurrentQuiz] = useState<QuizDetailDTO | null>(null);
 
   // Initialize empty quiz structure with one default question
   const initialQuiz = useMemo<QuizDetailDTO>(() => {
@@ -157,6 +188,11 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
     }, 100);
   };
 
+  // Handle quiz changes from EditableQuizContent
+  const handleQuizChange = (updatedQuiz: QuizDetailDTO) => {
+    setCurrentQuiz(updatedQuiz);
+  };
+
   // Add navigation guard for unsaved changes (only for browser close/refresh)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -165,9 +201,9 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
         return;
       }
 
-      // Only show warning if form is dirty (has changes)
-      // We'll check if there's any content that would be lost
-      if (initialQuiz.questions && initialQuiz.questions.length > 0) {
+      // Only show warning if quiz has meaningful content that would be lost
+      const quizToCheck = currentQuiz || initialQuiz;
+      if (hasQuizContent(quizToCheck)) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -178,7 +214,7 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [initialQuiz.questions, shouldPreventUnload]);
+  }, [currentQuiz, initialQuiz, shouldPreventUnload]);
 
   return (
     <>
@@ -186,6 +222,7 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
         quiz={initialQuiz}
         onSave={createQuiz}
         onCancel={handleCancel}
+        onChange={handleQuizChange}
         saveButtonText="Create Quiz"
         cancelButtonText="Cancel"
         isPublishing={isCreating}
