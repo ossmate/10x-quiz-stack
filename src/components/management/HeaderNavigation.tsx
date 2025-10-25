@@ -1,11 +1,18 @@
 import type { NavigationLink } from "../../types/management.types";
 import { AuthButtons } from "../auth/AuthButtons";
 
-interface HeaderNavigationProps {
-  currentPath: string;
+interface User {
+  id: string;
+  email: string;
+  username: string;
 }
 
-export function HeaderNavigation({ currentPath }: HeaderNavigationProps) {
+interface HeaderNavigationProps {
+  currentPath: string;
+  initialUser?: User | null;
+}
+
+export function HeaderNavigation({ currentPath, initialUser }: HeaderNavigationProps) {
   const navigationLinks: NavigationLink[] = [
     { title: "Dashboard", path: "/", isActive: currentPath === "/" },
     { title: "Create Quiz", path: "/quizzes/new", isActive: currentPath === "/quizzes/new" },
@@ -44,7 +51,7 @@ export function HeaderNavigation({ currentPath }: HeaderNavigationProps) {
 
           {/* Auth Buttons - Upper Right Corner */}
           <div className="flex items-center">
-            <AuthButtons currentPath={currentPath} />
+            <AuthButtons currentPath={currentPath} initialUser={initialUser} />
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { HeaderNavigation } from "../components/management/HeaderNavigation";
+import { AuthenticatedHeader } from "../components/management/AuthenticatedHeader";
 
 interface Props {
   title?: string;
@@ -9,6 +9,9 @@ interface Props {
 
 const { title = "10x Quiz Stack", showSidebar = false } = Astro.props;
 const currentPath = Astro.url.pathname;
+
+// Get user from middleware (already validated!)
+const initialUser = Astro.locals.user || null;
 ---
 
 <!doctype html>
@@ -21,7 +24,7 @@ const currentPath = Astro.url.pathname;
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-background text-foreground">
-    <HeaderNavigation client:load currentPath={currentPath} />
+    <AuthenticatedHeader client:load currentPath={currentPath} initialUser={initialUser} />
 
     <div class="flex">
       {

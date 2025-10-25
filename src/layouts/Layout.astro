@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { AuthButtons } from "../components/auth/AuthButtons";
+import { AuthenticatedButtons } from "../components/auth/AuthenticatedButtons";
 import { Toaster } from "../components/ui/sonner";
 
 interface Props {
@@ -10,6 +10,9 @@ interface Props {
 
 const { title = "10x Astro Starter", showHeader = true } = Astro.props;
 const currentPath = Astro.url.pathname;
+
+// Get user from middleware (already validated!)
+const initialUser = Astro.locals.user || null;
 ---
 
 <!doctype html>
@@ -37,7 +40,7 @@ const currentPath = Astro.url.pathname;
 
               {/* Auth Buttons - Upper Right Corner */}
               <div class="flex items-center">
-                <AuthButtons client:load currentPath={currentPath} />
+                <AuthenticatedButtons client:load currentPath={currentPath} initialUser={initialUser} />
               </div>
             </div>
           </div>

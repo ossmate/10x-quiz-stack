@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -9,9 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useAuthQuery, clearAuthCache } from "../../hooks/useAuthQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthButtonsProps {
   currentPath?: string;
+  initialUser?: User | null;
 }
 
 interface User {
@@ -20,33 +22,12 @@ interface User {
   username: string;
 }
 
-export function AuthButtons({ currentPath }: AuthButtonsProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthButtons({ currentPath, initialUser }: AuthButtonsProps) {
+  const queryClient = useQueryClient();
+  const { data: user, isLoading } = useAuthQuery({ initialUser });
 
-  useEffect(() => {
-    // Fetch current auth state from /api/auth/session
-    const fetchAuthState = async () => {
-      try {
-        const response = await fetch("/api/auth/session");
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch auth state:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAuthState();
-  }, []);
-
-  if (isLoading) {
+  // Only show loading if we have NO data (sessionStorage empty AND no SSR data)
+  if (isLoading && user === undefined) {
     return (
       <div className="flex items-center gap-2">
         <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
@@ -114,6 +95,7 @@ export function AuthButtons({ currentPath }: AuthButtonsProps) {
             onClick={async () => {
               try {
                 await fetch("/api/auth/logout", { method: "POST" });
+                clearAuthCache(queryClient); // Clear cache and storage
                 window.location.href = "/";
               } catch (error) {
                 console.error("Logout failed:", error);
