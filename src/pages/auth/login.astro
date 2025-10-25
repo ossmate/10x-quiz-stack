@@ -13,6 +13,6 @@ const redirectTo = Astro.url.searchParams.get("redirect") || undefined;
 // }
 ---
 
-<Layout title="Login - 10x Quiz Stack">
+<Layout title="Login - 10x Quiz Stack" showHeader={false}>
   <LoginForm client:load redirectTo={redirectTo} />
 </Layout>

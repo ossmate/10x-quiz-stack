@@ -54,9 +54,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Store user in locals for easy access
   if (user) {
+    // Fetch username from profiles table
+    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+
     locals.user = {
       id: user.id,
       email: user.email || "",
+      username: profile?.username || user.email?.split("@")[0] || "User",
     };
   }
 
