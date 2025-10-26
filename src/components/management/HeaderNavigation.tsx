@@ -14,7 +14,7 @@ interface HeaderNavigationProps {
 
 export function HeaderNavigation({ currentPath, initialUser }: HeaderNavigationProps) {
   const navigationLinks: NavigationLink[] = [
-    { title: "Dashboard", path: "/", isActive: currentPath === "/" },
+    { title: "Dashboard", path: "/dashboard", isActive: currentPath === "/dashboard" },
     { title: "Create Quiz", path: "/quizzes/new", isActive: currentPath === "/quizzes/new" },
     { title: "Generate Quiz", path: "/quizzes/ai/generate", isActive: currentPath === "/quizzes/ai/generate" },
   ];
@@ -31,27 +31,29 @@ export function HeaderNavigation({ currentPath, initialUser }: HeaderNavigationP
             </a>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex md:space-x-8" aria-label="Main navigation">
-            {navigationLinks.map((link) => (
-              <a
-                key={link.path}
-                href={link.path}
-                className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
-                  link.isActive
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
-                }`}
-                aria-current={link.isActive ? "page" : undefined}
-              >
-                {link.title}
-              </a>
-            ))}
-          </nav>
+          {/* Navigation Links and Auth Buttons - Right Side */}
+          <div className="flex items-center gap-x-8">
+            <nav className="hidden md:flex md:space-x-8" aria-label="Main navigation">
+              {navigationLinks.map((link) => (
+                <a
+                  key={link.path}
+                  href={link.path}
+                  className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
+                    link.isActive
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                  }`}
+                  aria-current={link.isActive ? "page" : undefined}
+                >
+                  {link.title}
+                </a>
+              ))}
+            </nav>
 
-          {/* Auth Buttons - Upper Right Corner */}
-          <div className="flex items-center">
-            <AuthButtons currentPath={currentPath} initialUser={initialUser} />
+            {/* Auth Buttons */}
+            <div className="flex items-center">
+              <AuthButtons currentPath={currentPath} initialUser={initialUser} />
+            </div>
           </div>
         </div>
       </div>

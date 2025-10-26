@@ -138,7 +138,7 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
    * Handle navigation to dashboard from error state
    */
   const handleGoToDashboard = useCallback(() => {
-    navigate("/");
+    navigate("/dashboard");
   }, []);
 
   // Loading state

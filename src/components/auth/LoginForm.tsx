@@ -96,14 +96,15 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         } else {
           setFormError(data.message || "Invalid email or password");
         }
+        setIsLoading(false);
         return;
       }
 
-      // Login successful - redirect to original page or home
-      window.location.href = redirectTo || "/";
+      // Login successful - keep loading state until redirect completes
+      // Don't call setIsLoading(false) here to prevent form from showing cleared state
+      window.location.href = redirectTo || "/dashboard";
     } catch {
       setFormError("Connection error. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };

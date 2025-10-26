@@ -9,6 +9,7 @@ import type { Database } from "../db/database.types.ts";
  * Protected routes - require authentication
  */
 const PROTECTED_ROUTES = [
+  "/dashboard",
   "/quizzes/new",
   "/quizzes/ai/generate",
   "/quizzes/*/edit",
@@ -79,10 +80,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return redirect(redirectUrl);
   }
 
-  // Redirect authenticated users from auth pages to home
+  // Redirect authenticated users from auth pages to dashboard
   const isAuthPage = url.pathname === "/auth/login" || url.pathname === "/auth/register";
   if (isAuthPage && user) {
-    return redirect("/");
+    return redirect("/dashboard");
   }
 
   return next();

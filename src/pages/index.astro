@@ -1,58 +1,199 @@
 ---
-import ManagementLayout from "../layouts/ManagementLayout.astro";
-import { DashboardWithProvider } from "../components/Dashboard/DashboardWithProvider.tsx";
-import { createSupabaseServerInstance } from "../db/supabase.client.ts";
-import type { QuizListResponse } from "../types.ts";
+import Layout from "../layouts/Layout.astro";
+import { Button } from "../components/ui/button";
 
-// Set prerender to false as this page requires authentication
-export const prerender = false;
+// Public landing page - can be prerendered
+export const prerender = false; // Keep dynamic to show logged-in state
 
-// Note: Authentication will be handled by middleware
-// If user is not authenticated, they will be redirected to /login
-
-// Server-side data fetching for initial load optimization
-let initialMyQuizzes: QuizListResponse | null = null;
-
-try {
-  const supabaseClient = createSupabaseServerInstance({
-    cookies: Astro.cookies,
-    headers: Astro.request.headers,
-  });
-
-  // Use getUser() instead of getSession() for security
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
-
-  if (user) {
-    // Fetch user's quizzes server-side with owned=true parameter
-    const queryParams = new URLSearchParams({
-      page: "1",
-      limit: "10",
-      sort: "created_at",
-      order: "desc",
-      owned: "true",
-    });
-
-    const response = await fetch(`${Astro.url.origin}/api/quizzes?${queryParams}`, {
-      headers: {
-        Cookie: Astro.request.headers.get("Cookie") || "",
-      },
-    });
-
-    if (response.ok) {
-      initialMyQuizzes = await response.json();
-    } else {
-      // eslint-disable-next-line no-console
-      console.error("SSR: Failed to fetch my quizzes:", response.status);
-    }
-  }
-} catch (error) {
-  // eslint-disable-next-line no-console
-  console.error("SSR: Error fetching initial data:", error);
-}
+// Check if user is authenticated
+const user = Astro.locals.user || null;
 ---
 
-<ManagementLayout title="Dashboard | QuizStack">
-  <DashboardWithProvider client:load initialMyQuizzes={initialMyQuizzes} />
-</ManagementLayout>
+<Layout title="10x Quiz Stack - Create and Share Interactive Quizzes">
+  <main class="min-h-screen">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-b from-card to-background py-20">
+      <div class="container mx-auto px-4 text-center">
+        <h1 class="mb-6 text-5xl font-bold tracking-tight md:text-6xl">
+          Create, Share, and Take
+          <span class="text-primary"> Interactive Quizzes</span>
+        </h1>
+        <p class="mx-auto mb-8 max-w-2xl text-xl text-muted-foreground">
+          Build engaging quizzes with AI assistance, share them with your community, and track your progress. Perfect
+          for educators, trainers, and lifelong learners.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {
+            user ? (
+              <a href="/dashboard">
+                <Button size="lg" class="text-lg">
+                  Go to Dashboard
+                </Button>
+              </a>
+            ) : (
+              <>
+                <a href="/auth/register">
+                  <Button size="lg" class="text-lg">
+                    Get Started Free
+                  </Button>
+                </a>
+                <a href="/auth/login">
+                  <Button variant="outline" size="lg" class="text-lg">
+                    Log In
+                  </Button>
+                </a>
+              </>
+            )
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20">
+      <div class="container mx-auto px-4">
+        <h2 class="mb-12 text-center text-3xl font-bold md:text-4xl">Everything You Need to Create Amazing Quizzes</h2>
+
+        <div class="grid gap-8 md:grid-cols-3">
+          <!-- Feature 1: AI Generation -->
+          <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+              <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="mb-2 text-xl font-semibold">AI-Powered Generation</h3>
+            <p class="text-muted-foreground">
+              Generate high-quality quizzes instantly using AI. Just provide a topic and let our intelligent system
+              create engaging questions for you.
+            </p>
+          </div>
+
+          <!-- Feature 2: Easy Management -->
+          <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+              <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="mb-2 text-xl font-semibold">Easy Quiz Management</h3>
+            <p class="text-muted-foreground">
+              Create, edit, and organize your quizzes with our intuitive interface. Keep them private or publish to
+              share with the world.
+            </p>
+          </div>
+
+          <!-- Feature 3: Public Library -->
+          <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+              <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="mb-2 text-xl font-semibold">Public Quiz Library</h3>
+            <p class="text-muted-foreground">
+              Access thousands of public quizzes created by the community. Learn new topics or test your knowledge
+              across various subjects.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="bg-card py-20">
+      <div class="container mx-auto px-4">
+        <h2 class="mb-12 text-center text-3xl font-bold md:text-4xl">How It Works</h2>
+
+        <div class="mx-auto max-w-3xl space-y-8">
+          <!-- Step 1 -->
+          <div class="flex gap-4">
+            <div
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold"
+            >
+              1
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-semibold">Sign Up for Free</h3>
+              <p class="text-muted-foreground">
+                Create your account in seconds. No credit card required, just your email and password.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex gap-4">
+            <div
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold"
+            >
+              2
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-semibold">Create Your Quiz</h3>
+              <p class="text-muted-foreground">
+                Use our AI generator to create quizzes instantly, or build them manually with our easy-to-use editor.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex gap-4">
+            <div
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold"
+            >
+              3
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-semibold">Share and Learn</h3>
+              <p class="text-muted-foreground">
+                Publish your quizzes to share with others, or explore the public library to test your knowledge on any
+                topic.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20">
+      <div class="container mx-auto px-4 text-center">
+        <h2 class="mb-6 text-3xl font-bold md:text-4xl">Ready to Get Started?</h2>
+        <p class="mx-auto mb-8 max-w-2xl text-xl text-muted-foreground">
+          Join thousands of educators and learners creating interactive quizzes today.
+        </p>
+
+        <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {
+            user ? (
+              <a href="/dashboard">
+                <Button size="lg" class="text-lg">
+                  Go to Dashboard
+                </Button>
+              </a>
+            ) : (
+              <a href="/auth/register">
+                <Button size="lg" class="text-lg">
+                  Create Your First Quiz
+                </Button>
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
