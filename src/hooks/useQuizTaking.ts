@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { navigate } from "astro:transitions/client";
 import { z } from "zod";
+import { getDemoQuizById } from "../data/demoQuizzes";
 import type {
   QuizDetailDTO,
   QuizAttemptDTO,
@@ -14,6 +15,7 @@ import type {
 interface UseQuizTakingParams {
   quizId: string;
   currentUserId?: string;
+  isDemo?: boolean;
 }
 
 interface UseQuizTakingReturn {
@@ -22,6 +24,7 @@ interface UseQuizTakingReturn {
   currentQuestion: QuestionWithOptionsDTO | null;
   navigationState: NavigationState;
   progressInfo: ProgressInfo;
+  isDemoMode: boolean;
 
   // Actions
   selectOption: (questionId: string, optionId: string) => void;
@@ -41,7 +44,10 @@ const uuidSchema = z.string().uuid();
  * Handles quiz loading, attempt creation, answer tracking, submission, and results
  */
 export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn {
-  const { quizId } = params;
+  const { quizId, currentUserId, isDemo = false } = params;
+
+  // Demo mode is when isDemo is true AND user is not authenticated
+  const isDemoMode = isDemo && !currentUserId;
 
   // Validate UUID format
   const validationResult = uuidSchema.safeParse(quizId);
@@ -141,20 +147,64 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
    * Submit quiz answers and calculate score
    */
   const submitQuiz = useCallback(async () => {
-    setTakingState((prev) => ({
-      ...prev,
-      phase: "submitting",
-    }));
-
     try {
-      const { quiz, attempt, userAnswers } = takingState;
+      // Use functional update to get current state
+      await new Promise<void>((resolve, reject) => {
+        setTakingState((prev) => {
+          const { quiz, userAnswers } = prev;
 
-      if (!quiz || !attempt) {
-        throw new Error("Quiz or attempt data is missing");
+          if (!quiz) {
+            reject(new Error("Quiz data is missing"));
+            return prev;
+          }
+
+          // Calculate score
+          const calculatedScore = calculateScore(quiz, userAnswers);
+
+          // For demo mode, just calculate score locally without API calls
+          if (isDemoMode) {
+            resolve();
+            return {
+              ...prev,
+              phase: "completed",
+              score: calculatedScore,
+            };
+          }
+
+          // Set to submitting for non-demo mode
+          resolve();
+          return {
+            ...prev,
+            phase: "submitting",
+          };
+        });
+      });
+
+      // If demo mode, we're done
+      if (isDemoMode) {
+        return;
       }
 
-      // Calculate score
+      // For regular quizzes, continue with API calls
+      const currentState = await new Promise<typeof takingState>((resolve) => {
+        setTakingState((prev) => {
+          resolve(prev);
+          return prev;
+        });
+      });
+
+      const { quiz, attempt, userAnswers } = currentState;
+
+      if (!quiz) {
+        throw new Error("Quiz data is missing");
+      }
+
       const calculatedScore = calculateScore(quiz, userAnswers);
+
+      // For regular quizzes, save to database
+      if (!attempt) {
+        throw new Error("Attempt data is missing");
+      }
 
       // Transform userAnswers to API format
       const responses = Object.entries(userAnswers).map(([questionId, selectedOptionIds]) => ({
@@ -225,7 +275,7 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
       // eslint-disable-next-line no-console
       console.error("Error submitting quiz:", err);
     }
-  }, [takingState, quizId, calculateScore]);
+  }, [quizId, calculateScore, isDemoMode]);
 
   /**
    * Retry quiz by creating a new attempt
@@ -330,7 +380,13 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
 
   // Computed: Result
   const result = useMemo<QuizResult | null>(() => {
-    if (takingState.phase !== "completed" || !takingState.quiz || !takingState.attempt || takingState.score === null) {
+    // For demo mode, attempt can be null
+    if (takingState.phase !== "completed" || !takingState.quiz || takingState.score === null) {
+      return null;
+    }
+
+    // For non-demo mode, require attempt
+    if (!isDemoMode && !takingState.attempt) {
       return null;
     }
 
@@ -338,7 +394,7 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
     const percentage = totalQuestions > 0 ? (takingState.score / totalQuestions) * 100 : 0;
 
     return {
-      attemptId: takingState.attempt.id,
+      attemptId: takingState.attempt?.id || "demo",
       score: takingState.score,
       totalQuestions,
       percentage,
@@ -346,12 +402,12 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
       userAnswers: takingState.userAnswers,
       quiz: takingState.quiz,
     };
-  }, [takingState]);
+  }, [takingState, isDemoMode]);
 
   // Initialize quiz on mount - only run once per quizId change
   useEffect(() => {
-    // Validate UUID format
-    if (!isValidUuid) {
+    // For demo quizzes, skip UUID validation
+    if (!isDemo && !isValidUuid) {
       setTakingState({
         phase: "error",
         quiz: null,
@@ -378,47 +434,88 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
     // Define async function inside effect to avoid stale closure
     const fetchQuizAndCreateAttempt = async () => {
       try {
-        // Fetch quiz details
-        const quizResponse = await fetch(`/api/quizzes/${quizId}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+        let quiz: QuizDetailDTO;
 
-        if (quizResponse.status === 401) {
-          navigate(`/login?redirect=/quizzes/${quizId}/take`);
-          return;
-        }
+        // For demo quizzes, load from demo data
+        if (isDemo) {
+          const demoQuiz = getDemoQuizById(quizId);
+          if (!demoQuiz) {
+            throw new Error("Demo quiz not found.");
+          }
 
-        if (!quizResponse.ok) {
-          const errorData = await quizResponse.json().catch(() => ({
-            message: "Failed to load quiz",
-          }));
-
-          // eslint-disable-next-line no-console
-          console.error("Quiz fetch error:", {
-            status: quizResponse.status,
-            quizId,
-            errorData,
+          // Transform demo quiz to QuizDetailDTO format
+          quiz = {
+            id: demoQuiz.id,
+            title: demoQuiz.title,
+            description: demoQuiz.description,
+            user_id: "demo",
+            user_email: "demo@example.com",
+            status: "published",
+            source: "manual",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            questions: demoQuiz.questions.map((q, qIdx) => ({
+              id: q.id,
+              quiz_id: demoQuiz.id,
+              content: q.question,
+              position: qIdx,
+              status: "active",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              options: q.options.map((opt, idx) => ({
+                id: opt.id,
+                question_id: q.id,
+                content: opt.text,
+                is_correct: opt.isCorrect,
+                position: idx,
+                created_at: new Date().toISOString(),
+              })),
+            })),
+          };
+        } else {
+          // Fetch regular quiz details from API
+          const quizResponse = await fetch(`/api/quizzes/${quizId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
           });
 
-          if (quizResponse.status === 404) {
-            throw new Error("Quiz not found or you don't have access to it.");
-          }
-          if (quizResponse.status === 400) {
-            throw new Error("Invalid quiz ID.");
+          if (quizResponse.status === 401) {
+            navigate(`/login?redirect=/quizzes/${quizId}/take`);
+            return;
           }
 
-          throw new Error(errorData.message || "Failed to load quiz. Please try again.");
+          if (!quizResponse.ok) {
+            const errorData = await quizResponse.json().catch(() => ({
+              message: "Failed to load quiz",
+            }));
+
+            // eslint-disable-next-line no-console
+            console.error("Quiz fetch error:", {
+              status: quizResponse.status,
+              quizId,
+              errorData,
+            });
+
+            if (quizResponse.status === 404) {
+              throw new Error("Quiz not found or you don't have access to it.");
+            }
+            if (quizResponse.status === 400) {
+              throw new Error("Invalid quiz ID.");
+            }
+
+            throw new Error(errorData.message || "Failed to load quiz. Please try again.");
+          }
+
+          quiz = await quizResponse.json();
         }
-
-        const quiz: QuizDetailDTO = await quizResponse.json();
 
         // eslint-disable-next-line no-console
         console.log("Quiz fetched successfully:", {
           id: quiz.id,
           title: quiz.title,
           questionCount: quiz.questions?.length || 0,
+          isDemo,
         });
 
         // Validate quiz has questions
@@ -426,7 +523,21 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
           throw new Error("This quiz has no questions to take.");
         }
 
-        // Create quiz attempt
+        // For demo mode, skip attempt creation
+        if (isDemoMode) {
+          setTakingState({
+            phase: "taking",
+            quiz,
+            attempt: null,
+            currentQuestionIndex: 0,
+            userAnswers: {},
+            score: null,
+            error: null,
+          });
+          return;
+        }
+
+        // Create quiz attempt for regular quizzes or authenticated users taking demos
         const attemptResponse = await fetch(`/api/quizzes/${quizId}/attempts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -473,13 +584,14 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
     };
 
     fetchQuizAndCreateAttempt();
-  }, [quizId, isValidUuid]); // Only depend on quizId and isValidUuid
+  }, [quizId, isValidUuid, isDemo, isDemoMode]); // Only depend on quizId and isValidUuid
 
   return {
     takingState,
     currentQuestion,
     navigationState,
     progressInfo,
+    isDemoMode,
     selectOption,
     nextQuestion,
     previousQuestion,

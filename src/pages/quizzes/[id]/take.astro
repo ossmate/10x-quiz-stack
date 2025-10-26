@@ -1,6 +1,7 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import { QuizTakingContainer } from "../../../components/quiz-taking/QuizTakingContainer.tsx";
+import { getDemoQuizById } from "../../../data/demoQuizzes";
 
 // Set prerender to false as this page requires authentication
 export const prerender = false;
@@ -8,16 +9,26 @@ export const prerender = false;
 // Extract quiz ID from route parameters
 const { id } = Astro.params;
 
-// Note: Using DEFAULT_USER_ID from environment for development
-// In production, this will be replaced with proper authentication
-const currentUserId = import.meta.env.DEFAULT_USER_ID;
-
 // Ensure quiz ID exists
 if (!id) {
   return Astro.redirect("/");
 }
+
+// Check if this is a demo quiz
+const isDemo = id.startsWith("demo-");
+
+// For demo quizzes, verify the quiz exists
+if (isDemo) {
+  const demoQuiz = getDemoQuizById(id);
+  if (!demoQuiz) {
+    return Astro.redirect("/404");
+  }
+}
+
+// Get user - demo quizzes don't require authentication
+const currentUserId = isDemo ? Astro.locals.user?.id || null : import.meta.env.DEFAULT_USER_ID;
 ---
 
-<Layout title="Take Quiz | QuizStack">
-  <QuizTakingContainer client:load quizId={id} currentUserId={currentUserId} />
+<Layout title={isDemo ? "Demo Quiz | QuizStack" : "Take Quiz | QuizStack"}>
+  <QuizTakingContainer client:load quizId={id} currentUserId={currentUserId} isDemo={isDemo} />
 </Layout>
