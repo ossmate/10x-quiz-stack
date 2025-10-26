@@ -94,8 +94,8 @@ export function ForgotPasswordForm() {
         )}
 
         {successMessage && (
-          <Alert className="bg-[oklch(0.65_0.15_145)]/10 border-[oklch(0.65_0.15_145)]">
-            <AlertDescription className="text-[oklch(0.65_0.15_145)]">{successMessage}</AlertDescription>
+          <Alert className="bg-primary/10 border-primary">
+            <AlertDescription className="text-primary">{successMessage}</AlertDescription>
           </Alert>
         )}
 
