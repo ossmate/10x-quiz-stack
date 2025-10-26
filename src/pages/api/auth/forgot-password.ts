@@ -53,8 +53,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Send password reset email
     // Note: This will send an email if the user exists, but we always return success
     // to prevent email enumeration attacks
+    const redirectUrl = import.meta.env.PUBLIC_SITE_URL || new URL(request.url).origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${new URL(request.url).origin}/auth/reset-password`,
+      redirectTo: `${redirectUrl}/auth/reset-password`,
     });
 
     // Log error for monitoring, but don't expose it to the user
