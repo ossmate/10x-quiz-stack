@@ -13,7 +13,7 @@ interface ResetPasswordFormProps {
 }
 
 export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) {
-  const [token, setToken] = useState<string>(tokenProp);
+  const [token, setToken] = useState<string>("");
   const [formData, setFormData] = useState<Omit<ResetPasswordInput, "token">>({
     password: "",
     confirmPassword: "",
@@ -25,25 +25,30 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
 
   useEffect(() => {
-    // Parse token from URL hash (Supabase sends it as #access_token=xxx&type=recovery)
-    const hash = window.location.hash.substring(1); // Remove the '#'
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
-    const type = params.get("type");
+    // Try to get token from prop first, then fallback to URL query param
+    let recoveryToken = tokenProp;
 
-    // Validate that this is a recovery link with a token
-    if (type !== "recovery" || !accessToken) {
+    if (!recoveryToken) {
+      // Fallback: read from URL query params (client-side)
+      const params = new URLSearchParams(window.location.search);
+      recoveryToken = params.get("code") || "";
+    }
+
+    console.log("Recovery token:", recoveryToken); // Debug log
+
+    // Validate that token is provided
+    if (!recoveryToken) {
       setIsTokenValid(false);
-      setFormError("Invalid or expired reset link");
+      setFormError("No reset code provided");
       return;
     }
 
-    setToken(accessToken);
+    setToken(recoveryToken);
 
     // TODO: Validate token on mount when backend is ready
     // const validateToken = async () => {
     //   try {
-    //     const response = await fetch(`/api/auth/validate-token?token=${accessToken}`);
+    //     const response = await fetch(`/api/auth/validate-token?token=${recoveryToken}`);
     //     if (!response.ok) {
     //       setIsTokenValid(false);
     //       setFormError("Reset link is invalid or expired");
@@ -54,7 +59,7 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
     //   }
     // };
     // validateToken();
-  }, []);
+  }, [tokenProp]);
 
   const handleInputChange = (field: keyof Omit<ResetPasswordInput, "token">, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
