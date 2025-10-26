@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import { AuthenticatedButtons } from "../components/auth/AuthenticatedButtons";
+import { AuthenticatedHeader } from "../components/management/AuthenticatedHeader";
 import { Toaster } from "../components/ui/sonner";
 
 interface Props {
@@ -27,24 +28,32 @@ const initialUser = Astro.locals.user || null;
   <body class="min-h-screen bg-background text-foreground">
     {
       showHeader && (
-        <header class="border-b border-border bg-card shadow-sm">
-          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
-              {/* Logo */}
-              <div class="flex items-center">
-                <a href="/" class="flex items-center text-xl font-bold text-foreground">
-                  <span class="text-primary">10x</span>
-                  <span class="ml-1">Quiz</span>
-                </a>
-              </div>
+        <>
+          {initialUser ? (
+            /* Show full navigation for authenticated users */
+            <AuthenticatedHeader client:load currentPath={currentPath} initialUser={initialUser} />
+          ) : (
+            /* Show simple header for guests */
+            <header class="border-b border-border bg-card shadow-sm">
+              <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                  {/* Logo */}
+                  <div class="flex items-center">
+                    <a href="/" class="flex items-center text-xl font-bold text-foreground">
+                      <span class="text-primary">10x</span>
+                      <span class="ml-1">Quiz</span>
+                    </a>
+                  </div>
 
-              {/* Auth Buttons - Upper Right Corner */}
-              <div class="flex items-center">
-                <AuthenticatedButtons client:load currentPath={currentPath} initialUser={initialUser} />
+                  {/* Auth Buttons - Upper Right Corner */}
+                  <div class="flex items-center">
+                    <AuthenticatedButtons client:load currentPath={currentPath} initialUser={initialUser} />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </header>
+            </header>
+          )}
+        </>
       )
     }
 

@@ -19,21 +19,29 @@ This project uses **Tailwind CSS 4** with a comprehensive theming system that su
 
 ## 2. View List
 
+**Public Landing Page**
+
+- **Path:** `/`
+- **Main Purpose:** Welcome new visitors and showcase the application features.
+- **Key Information:** Hero section with app overview, feature highlights (AI generation, quiz management, public library), clear call-to-action buttons.
+- **Key Components:** Hero section, features grid, how-it-works steps, CTA buttons (dynamic based on auth status).
+- **Considerations:** Responsive design, SEO-friendly, smooth transitions, accessible navigation.
+
 **Authentication Views**
 
 - **Login Screen**
-  - **Path:** `/login`
+  - **Path:** `/auth/login`
   - **Main Purpose:** Allow users to log in using their email/password.
   - **Key Information:** Input fields for email and password; error messages for invalid credentials; secure token handling.
   - **Key Components:** Form inputs, inline error display, secure submission button.
-  - **Considerations:** ARIA roles for form controls, secure token storage, responsive layout.
+  - **Considerations:** ARIA roles for form controls, secure token storage, responsive layout. Redirects to `/dashboard` after successful login.
 
 - **Signup Screen**
-  - **Path:** `/signup`
+  - **Path:** `/auth/register`
   - **Main Purpose:** Enable new users to register an account.
   - **Key Information:** Registration form with fields for email, password, and optionally display name or avatar.
   - **Key Components:** Registration form, inline validation errors, confirmation alerts.
-  - **Considerations:** Similar accessibility and security measures as login; clear guidance on password strength.
+  - **Considerations:** Similar accessibility and security measures as login; clear guidance on password strength. Redirects to login after successful registration.
 
 **Dashboard View**
 
@@ -77,15 +85,19 @@ This project uses **Tailwind CSS 4** with a comprehensive theming system that su
 
 ## 3. User Journey Map
 
-1. **User Authentication:**
-   - User lands on the login or signup screen, enters credentials, receives inline validation and error feedback, and upon success, a secure token is stored.
-2. **Dashboard Navigation:**
-   - After authentication, the user is redirected to the dashboard where the quiz list is displayed. The dashboard uses filtering tabs to switch between personal and public quizzes.
-3. **Quiz Management:**
+1. **Landing Page:**
+   - New visitors land on the public landing page at `/` where they learn about the application features.
+   - Authenticated users see a "Go to Dashboard" button instead of login/register buttons.
+   - Unauthenticated users can click "Get Started Free" or "Log In" to proceed.
+2. **User Authentication:**
+   - User navigates to the login or signup screen, enters credentials, receives inline validation and error feedback, and upon success, a secure token is stored.
+3. **Dashboard Navigation:**
+   - After authentication, the user is redirected to the dashboard (`/dashboard`) where the quiz list is displayed. The dashboard uses filtering tabs to switch between personal and public quizzes.
+4. **Quiz Management:**
    - The user can select to create a new quiz or edit an existing one. They are guided through a modal or wizard form with clear input fields and inline error messages.
-4. **Quiz Taking:**
+5. **Quiz Taking:**
    - Selecting a quiz redirects the user to the quiz taking view, where each question is displayed in an interactive format. The user navigates through questions, and responses are recorded.
-5. **AI Quiz Generation:**
+6. **AI Quiz Generation:**
    - For AI-driven quiz creation, the user inputs a prompt on the AI generation screen. The system calls the API to generate a quiz preview without saving to the database. The user can review this preview, make comprehensive edits to the title, description, questions, and answer options, and then explicitly save the quiz to the database when satisfied.
 
 ## 4. Layout and Navigation Structure

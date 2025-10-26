@@ -40,10 +40,10 @@ export function ChangePasswordForm() {
       reset();
       setShowPasswordStrength(false);
 
-      // Redirect to home page after showing success message
+      // Redirect to dashboard after showing success message
       setTimeout(() => {
         // eslint-disable-next-line react-compiler/react-compiler
-        window.location.href = "/";
+        window.location.href = "/dashboard";
       }, 1500);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Password change failed";

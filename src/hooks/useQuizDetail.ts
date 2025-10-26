@@ -133,7 +133,7 @@ export function useQuizDetail(params: UseQuizDetailParams): UseQuizDetailReturn 
       }
 
       // Success - navigate to dashboard
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Error deleting quiz:", err);

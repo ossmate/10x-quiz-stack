@@ -13,7 +13,7 @@ const { id } = Astro.params;
 
 // Ensure quiz ID exists
 if (!id) {
-  return Astro.redirect("/");
+  return Astro.redirect("/dashboard");
 }
 
 // Get current user from session (set by middleware)
@@ -24,31 +24,28 @@ if (!user) {
   return Astro.redirect(`/auth/login?redirect=${encodeURIComponent(Astro.url.pathname)}`);
 }
 
-// Fetch quiz data server-side
+// Fetch quiz data server-side using service directly
+import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
+import { quizService } from "../../../lib/services/quiz.service.ts";
+
 let quiz: QuizDetailDTO | null = null;
 let error: string | null = null;
 
 try {
-  const response = await fetch(`${Astro.url.origin}/api/quizzes/${id}`, {
-    headers: {
-      Cookie: Astro.request.headers.get("Cookie") || "",
-    },
+  const supabaseClient = createSupabaseServerInstance({
+    cookies: Astro.cookies,
+    headers: Astro.request.headers,
   });
 
-  if (response.ok) {
-    quiz = await response.json();
+  // Fetch quiz using service directly (avoids internal HTTP request)
+  quiz = await quizService.getQuizById(supabaseClient, id);
 
-    // Check ownership - only quiz owner can edit
-    if (quiz && quiz.user_id !== user.id) {
-      return new Response(null, {
-        status: 403,
-        statusText: "Forbidden",
-      });
-    }
-  } else if (response.status === 404) {
-    error = "Quiz not found";
-  } else {
-    error = "Failed to load quiz";
+  // Check ownership - only quiz owner can edit
+  if (quiz && quiz.user_id !== user.id) {
+    return new Response(null, {
+      status: 403,
+      statusText: "Forbidden",
+    });
   }
 } catch (err) {
   console.error("Failed to fetch quiz for editing:", err);
@@ -57,12 +54,12 @@ try {
 
 // If error or no quiz, show error page
 if (error || !quiz) {
-  return Astro.redirect("/");
+  return Astro.redirect("/dashboard");
 }
 
 // Define breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
-  { label: "Dashboard", path: "/" },
+  { label: "Dashboard", path: "/dashboard" },
   { label: quiz.title, path: `/quizzes/${id}` },
   { label: "Edit", path: `/quizzes/${id}/edit`, isCurrent: true },
 ];

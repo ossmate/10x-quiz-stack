@@ -80,8 +80,8 @@ export function AuthButtons({ currentPath, initialUser }: AuthButtonsProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <a href="/" className="cursor-pointer text-popover-foreground hover:bg-accent">
-            My Quizzes
+          <a href="/dashboard" className="cursor-pointer text-popover-foreground hover:bg-accent">
+            Dashboard
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

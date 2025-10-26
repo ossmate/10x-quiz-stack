@@ -18,7 +18,7 @@ if (!user) {
 
 // Define breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
-  { label: "Dashboard", path: "/" },
+  { label: "Dashboard", path: "/dashboard" },
   { label: "Create Quiz", path: "/quizzes/new", isCurrent: true },
 ];
 ---
@@ -32,8 +32,8 @@ const breadcrumbs: BreadcrumbItem[] = [
   </div>
 
   <!-- Quiz Creator Component -->
-  <QuizCreator client:only="react" userId={user.id} />
+  <QuizCreator client:load userId={user.id} />
 
   <!-- Toast Notifications -->
-  <Toaster client:only="react" />
+  <Toaster client:load />
 </ManagementLayout>

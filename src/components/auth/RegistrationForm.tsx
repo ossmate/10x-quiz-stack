@@ -17,8 +17,6 @@ export function RegistrationForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
   const [formError, setFormError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordStrength, setShowPasswordStrength] = useState(false);
-
   const handleInputChange = (field: keyof RegisterInput, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear field error when user starts typing
@@ -28,10 +26,6 @@ export function RegistrationForm() {
     if (formError) {
       setFormError("");
     }
-  };
-
-  const handlePasswordFocus = () => {
-    setShowPasswordStrength(true);
   };
 
   const validateForm = (): boolean => {
@@ -92,15 +86,21 @@ export function RegistrationForm() {
         } else {
           setFormError(data.message || "Registration failed");
         }
+        setIsLoading(false);
         return;
       }
 
-      // Registration successful - redirect to login page
-      // Email confirmation is disabled, so users can log in immediately
-      window.location.href = "/auth/login?registered=true";
+      // Registration successful - keep loading state until redirect completes
+      // Don't call setIsLoading(false) here to prevent form from showing cleared state
+      if (data.requiresEmailConfirmation) {
+        // Redirect to email verification page
+        window.location.href = "/auth/verify-email";
+      } else {
+        // Email confirmation disabled, redirect to login
+        window.location.href = "/auth/login?registered=true";
+      }
     } catch {
       setFormError("Connection error. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -144,7 +144,6 @@ export function RegistrationForm() {
             placeholder="••••••••"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
-            onFocus={handlePasswordFocus}
             className={`bg-background text-foreground border-input focus:border-primary ${
               errors.password ? "border-destructive" : ""
             }`}
@@ -153,7 +152,7 @@ export function RegistrationForm() {
             aria-describedby={errors.password ? "password-error" : undefined}
           />
           {errors.password && <FormFieldError error={errors.password} />}
-          {showPasswordStrength && <PasswordStrengthIndicator password={formData.password} />}
+          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
         </div>
 
         <div className="space-y-2">

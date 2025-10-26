@@ -1,4 +1,47 @@
 ---
-// Redirect /dashboard to root /
-return Astro.redirect("/");
+import ManagementLayout from "../layouts/ManagementLayout.astro";
+import { DashboardWithProvider } from "../components/Dashboard/DashboardWithProvider.tsx";
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
+import { quizService } from "../lib/services/quiz.service.ts";
+import type { QuizListResponse } from "../types.ts";
+
+// Set prerender to false as this page requires authentication
+export const prerender = false;
+
+// Note: Authentication will be handled by middleware
+// If user is not authenticated, they will be redirected to /login
+
+// Server-side data fetching for initial load optimization
+let initialMyQuizzes: QuizListResponse | null = null;
+
+try {
+  const supabaseClient = createSupabaseServerInstance({
+    cookies: Astro.cookies,
+    headers: Astro.request.headers,
+  });
+
+  // Use getUser() instead of getSession() for security
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+
+  if (user) {
+    // Fetch user's quizzes server-side using the service directly
+    // This avoids internal HTTP fetch which can fail in production
+    initialMyQuizzes = await quizService.getQuizzes(supabaseClient, user.id, {
+      page: 1,
+      limit: 10,
+      sort: "created_at",
+      order: "desc",
+      owned: true,
+    });
+  }
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.error("SSR: Error fetching initial data:", error);
+}
 ---
+
+<ManagementLayout title="Dashboard | QuizStack">
+  <DashboardWithProvider client:load initialMyQuizzes={initialMyQuizzes} />
+</ManagementLayout>

@@ -11,9 +11,11 @@ const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Cookie options for SSR
+// secure: true requires HTTPS, use false for local development
+const isProduction = import.meta.env.PROD;
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",
-  secure: true,
+  secure: isProduction, // Only require HTTPS in production
   httpOnly: true,
   sameSite: "lax",
 };

@@ -51,12 +51,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: request.headers,
     });
 
+    // Get the site URL for email confirmation redirect
+    const siteUrl = new URL(request.url).origin;
+
     // Register user with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Email confirmation disabled - users can log in immediately
+        // Email confirmation URL - user will be redirected here after clicking the link
+        emailRedirectTo: `${siteUrl}/auth/login?verified=true`,
         // Profile created automatically via database trigger
       },
     });
@@ -111,14 +115,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // See migration: 20251023000000_add_profile_trigger_and_fix_rls.sql
     // The trigger extracts username from user metadata and creates the profile atomically
 
+    // Check if email confirmation is required
+    // If user.identities is empty, email confirmation is required
+    const requiresEmailConfirmation = !data.user.identities || data.user.identities.length === 0;
+
     return new Response(
       JSON.stringify({
-        message: "Registration successful. You can now log in.",
+        message: requiresEmailConfirmation
+          ? "Registration successful. Please check your email to verify your account."
+          : "Registration successful. You can now log in.",
         user: {
           id: data.user.id,
           email: data.user.email,
         },
-        requiresEmailConfirmation: false,
+        requiresEmailConfirmation,
       }),
       {
         status: 201,
