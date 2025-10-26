@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { resetPasswordSchema, type ResetPasswordInput } from "../../lib/validation/auth.schema";
 import { AuthContainer } from "./AuthContainer";
 import { FormFieldError } from "./FormFieldError";
@@ -9,11 +9,10 @@ import { Label } from "../ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 
 interface ResetPasswordFormProps {
-  token: string;
+  hasValidSession: boolean;
 }
 
-export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) {
-  const [token, setToken] = useState<string>("");
+export function ResetPasswordForm({ hasValidSession }: ResetPasswordFormProps) {
   const [formData, setFormData] = useState<Omit<ResetPasswordInput, "token">>({
     password: "",
     confirmPassword: "",
@@ -21,45 +20,7 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
   const [errors, setErrors] = useState<Partial<Record<keyof ResetPasswordInput, string>>>({});
   const [formError, setFormError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isTokenValid, setIsTokenValid] = useState(true);
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
-
-  useEffect(() => {
-    // Try to get token from prop first, then fallback to URL query param
-    let recoveryToken = tokenProp;
-
-    if (!recoveryToken) {
-      // Fallback: read from URL query params (client-side)
-      const params = new URLSearchParams(window.location.search);
-      recoveryToken = params.get("code") || "";
-    }
-
-    console.log("Recovery token:", recoveryToken); // Debug log
-
-    // Validate that token is provided
-    if (!recoveryToken) {
-      setIsTokenValid(false);
-      setFormError("No reset code provided");
-      return;
-    }
-
-    setToken(recoveryToken);
-
-    // TODO: Validate token on mount when backend is ready
-    // const validateToken = async () => {
-    //   try {
-    //     const response = await fetch(`/api/auth/validate-token?token=${recoveryToken}`);
-    //     if (!response.ok) {
-    //       setIsTokenValid(false);
-    //       setFormError("Reset link is invalid or expired");
-    //     }
-    //   } catch (error) {
-    //     setIsTokenValid(false);
-    //     setFormError("Failed to validate reset link");
-    //   }
-    // };
-    // validateToken();
-  }, [tokenProp]);
 
   const handleInputChange = (field: keyof Omit<ResetPasswordInput, "token">, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -78,7 +39,11 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
 
   const validateForm = (): boolean => {
     try {
-      resetPasswordSchema.parse({ ...formData, token });
+      // Validate just password fields (token is handled server-side)
+      resetPasswordSchema.parse({
+        token: "placeholder", // Required by schema but handled server-side
+        ...formData,
+      });
       setErrors({});
       return true;
     } catch (error) {
@@ -108,28 +73,25 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch("/api/auth/reset-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     token,
-      //     password: formData.password,
-      //   }),
-      // });
-      //
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   setFormError(error.message || "Password reset failed");
-      //   return;
-      // }
-      //
-      // // Redirect to login with success message
-      // window.location.href = "/auth/login?message=password-reset-success";
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+        }),
+        credentials: "include", // Important: include cookies for session
+      });
 
-      // Mock success for UI demonstration
-      console.log("Reset password form submitted:", { token, password: formData.password });
-      setFormError("Backend not implemented yet. Form validation successful!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setFormError(data.message || "Password reset failed");
+        return;
+      }
+
+      // Redirect to login with success message
+      window.location.href = "/auth/login?message=password-reset-success";
     } catch {
       setFormError("Connection error. Please try again.");
     } finally {
@@ -137,14 +99,18 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
     }
   };
 
-  if (!isTokenValid) {
+  if (!hasValidSession) {
     return (
       <AuthContainer title="Invalid Reset Link">
         <Alert variant="destructive" className="bg-destructive/10 border-destructive">
-          <AlertDescription className="text-destructive">{formError}</AlertDescription>
+          <AlertDescription className="text-destructive">
+            This password reset link is invalid or has expired.
+          </AlertDescription>
         </Alert>
         <div className="mt-4 text-center">
-          <p className="text-sm text-muted-foreground mb-4">This password reset link is invalid or has expired.</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            The link you clicked may have expired or already been used.
+          </p>
           <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
             <a href="/auth/forgot-password">Request a new reset link</a>
           </Button>
