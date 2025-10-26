@@ -65,6 +65,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     };
   }
 
+  // Check if this is a demo quiz route - these are public
+  const isDemoQuizRoute = /^\/quizzes\/demo-[^/]+\/take$/.test(url.pathname);
+
   // Check if route is protected
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => {
     if (route.includes("*")) {
@@ -74,8 +77,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return url.pathname.startsWith(route);
   });
 
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !user) {
+  // Redirect unauthenticated users from protected routes (except demo quiz routes)
+  if (isProtectedRoute && !user && !isDemoQuizRoute) {
     const redirectUrl = `/auth/login?redirect=${encodeURIComponent(url.pathname)}`;
     return redirect(redirectUrl);
   }

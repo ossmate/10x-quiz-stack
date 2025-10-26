@@ -12,6 +12,14 @@ export const POST: APIRoute = async ({ params, locals }) => {
   try {
     const quizId = params.id;
 
+    // Check if this is a demo quiz - demo quizzes cannot have attempts saved
+    if (quizId?.startsWith("demo-")) {
+      return new Response(JSON.stringify({ message: "Cannot create attempts for demo quizzes" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Validate quiz ID
     if (!quizId || !z.string().uuid().safeParse(quizId).success) {
       return new Response(JSON.stringify({ message: "Invalid quiz ID format" }), {
