@@ -12,7 +12,8 @@ interface ResetPasswordFormProps {
   token: string;
 }
 
-export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) {
+  const [token, setToken] = useState<string>(tokenProp);
   const [formData, setFormData] = useState<Omit<ResetPasswordInput, "token">>({
     password: "",
     confirmPassword: "",
@@ -24,10 +25,25 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
 
   useEffect(() => {
+    // Parse token from URL hash (Supabase sends it as #access_token=xxx&type=recovery)
+    const hash = window.location.hash.substring(1); // Remove the '#'
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const type = params.get("type");
+
+    // Validate that this is a recovery link with a token
+    if (type !== "recovery" || !accessToken) {
+      setIsTokenValid(false);
+      setFormError("Invalid or expired reset link");
+      return;
+    }
+
+    setToken(accessToken);
+
     // TODO: Validate token on mount when backend is ready
     // const validateToken = async () => {
     //   try {
-    //     const response = await fetch(`/api/auth/validate-token?token=${token}`);
+    //     const response = await fetch(`/api/auth/validate-token?token=${accessToken}`);
     //     if (!response.ok) {
     //       setIsTokenValid(false);
     //       setFormError("Reset link is invalid or expired");
@@ -38,12 +54,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     //   }
     // };
     // validateToken();
-
-    if (!token) {
-      setIsTokenValid(false);
-      setFormError("No reset token provided");
-    }
-  }, [token]);
+  }, []);
 
   const handleInputChange = (field: keyof Omit<ResetPasswordInput, "token">, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
