@@ -43,9 +43,9 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
     if (score <= 2) {
       return { level: "weak", score, label: "Weak", color: "bg-destructive" };
     } else if (score <= 4) {
-      return { level: "medium", score, label: "Medium", color: "bg-[oklch(0.7_0.15_75)]" };
+      return { level: "medium", score, label: "Medium", color: "bg-accent" };
     } else {
-      return { level: "strong", score, label: "Strong", color: "bg-[oklch(0.65_0.15_145)]" };
+      return { level: "strong", score, label: "Strong", color: "bg-primary" };
     }
   }, [password]);
 
@@ -65,8 +65,8 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
             strength.level === "weak"
               ? "text-destructive"
               : strength.level === "medium"
-                ? "text-[oklch(0.7_0.15_75)]"
-                : "text-[oklch(0.65_0.15_145)]"
+                ? "text-accent"
+                : "text-primary"
           }`}
         >
           {strength.label}
@@ -76,16 +76,16 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
       <div className="text-xs text-muted-foreground space-y-1">
         <p className="font-medium">Password requirements:</p>
         <ul className="space-y-0.5">
-          <li className={password.length >= 8 ? "text-[oklch(0.65_0.15_145)]" : ""}>
+          <li className={password.length >= 8 ? "text-primary" : ""}>
             {password.length >= 8 ? "✓" : "○"} At least 8 characters
           </li>
-          <li className={/[A-Z]/.test(password) ? "text-[oklch(0.65_0.15_145)]" : ""}>
+          <li className={/[A-Z]/.test(password) ? "text-primary" : ""}>
             {/[A-Z]/.test(password) ? "✓" : "○"} One uppercase letter
           </li>
-          <li className={/[a-z]/.test(password) ? "text-[oklch(0.65_0.15_145)]" : ""}>
+          <li className={/[a-z]/.test(password) ? "text-primary" : ""}>
             {/[a-z]/.test(password) ? "✓" : "○"} One lowercase letter
           </li>
-          <li className={/[0-9]/.test(password) ? "text-[oklch(0.65_0.15_145)]" : ""}>
+          <li className={/[0-9]/.test(password) ? "text-primary" : ""}>
             {/[0-9]/.test(password) ? "✓" : "○"} One number
           </li>
         </ul>
