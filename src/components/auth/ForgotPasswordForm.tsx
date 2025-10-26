@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "../../lib/validation/auth.schema";
+import { useForgotPassword } from "../../lib/mutations/useForgotPassword";
 import { AuthContainer } from "./AuthContainer";
 import { FormFieldError } from "./FormFieldError";
 import { Button } from "../ui/button";
@@ -8,76 +12,39 @@ import { Label } from "../ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 
 export function ForgotPasswordForm() {
-  const [formData, setFormData] = useState<ForgotPasswordInput>({
-    email: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof ForgotPasswordInput, string>>>({});
-  const [formError, setFormError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
+  const forgotPasswordMutation = useForgotPassword();
 
-  const handleInputChange = (field: keyof ForgotPasswordInput, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
+    mode: "onBlur",
+    defaultValues: {
+      email: "",
+    },
+  });
 
-  const validateForm = (): boolean => {
-    try {
-      forgotPasswordSchema.parse(formData);
-      setErrors({});
-      return true;
-    } catch (error) {
-      const fieldErrors: Partial<Record<keyof ForgotPasswordInput, string>> = {};
-      if (error && typeof error === "object" && "issues" in error) {
-        const zodError = error as { issues: { path: (string | number)[]; message: string }[] };
-        zodError.issues?.forEach((err) => {
-          const field = err.path[0] as keyof ForgotPasswordInput;
-          fieldErrors[field] = err.message;
-        });
-      }
-      setErrors(fieldErrors);
-      return false;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
+  const onSubmit = async (formData: ForgotPasswordInput) => {
     setSuccessMessage("");
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch("/api/auth/forgot-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
-      //
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   setFormError(error.message || "Request failed. Please try again.");
-      //   return;
-      // }
+      const result = await forgotPasswordMutation.mutateAsync(formData);
+      setSuccessMessage(result.message);
+      reset();
+      toast.success("Password reset email sent! Redirecting to login...");
 
-      // Always show success message for security (don't reveal if email exists)
-      setSuccessMessage("If an account exists with this email, you will receive a password reset link shortly.");
-      setFormData({ email: "" });
-    } catch {
-      setFormError("Connection error. Please try again.");
-    } finally {
-      setIsLoading(false);
+      // Redirect to login page after showing success message
+      setTimeout(() => {
+        // eslint-disable-next-line react-compiler/react-compiler
+        window.location.href = "/auth/login";
+      }, 2000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to send password reset email";
+      toast.error(errorMessage);
     }
   };
 
@@ -86,13 +53,7 @@ export function ForgotPasswordForm() {
       title="Forgot password?"
       description="Enter your email address and we'll send you a link to reset your password"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {formError && (
-          <Alert variant="destructive" className="bg-destructive/10 border-destructive">
-            <AlertDescription className="text-destructive">{formError}</AlertDescription>
-          </Alert>
-        )}
-
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {successMessage && (
           <Alert className="bg-primary/10 border-primary">
             <AlertDescription className="text-primary">{successMessage}</AlertDescription>
@@ -107,24 +68,23 @@ export function ForgotPasswordForm() {
             id="email"
             type="email"
             placeholder="your@email.com"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
+            {...register("email")}
             className={`bg-background text-foreground border-input focus:border-primary ${
               errors.email ? "border-destructive" : ""
             }`}
-            disabled={isLoading}
+            disabled={isSubmitting}
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? "email-error" : undefined}
           />
-          {errors.email && <FormFieldError error={errors.email} />}
+          {errors.email && <FormFieldError error={errors.email.message} />}
         </div>
 
         <Button
           type="submit"
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          disabled={isLoading}
+          disabled={isSubmitting}
         >
-          {isLoading ? "Sending..." : "Send reset link"}
+          {isSubmitting ? "Sending..." : "Send reset link"}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
