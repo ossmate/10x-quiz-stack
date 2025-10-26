@@ -1,103 +1,58 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { changePasswordSchema, type ChangePasswordInput } from "../../lib/validation/auth.schema";
+import { useChangePassword } from "../../lib/mutations/useChangePassword";
 import { FormFieldError } from "./FormFieldError";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Alert, AlertDescription } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 
 export function ChangePasswordForm() {
-  const [formData, setFormData] = useState<ChangePasswordInput>({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof ChangePasswordInput, string>>>({});
-  const [formError, setFormError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
+  const changePasswordMutation = useChangePassword();
 
-  const handleInputChange = (field: keyof ChangePasswordInput, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-    if (formError) {
-      setFormError("");
-    }
-    if (successMessage) {
-      setSuccessMessage("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    watch,
+  } = useForm<ChangePasswordInput>({
+    resolver: zodResolver(changePasswordSchema),
+    mode: "onBlur",
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const newPassword = watch("newPassword");
+
+  const onSubmit = async (formData: ChangePasswordInput) => {
+    try {
+      await changePasswordMutation.mutateAsync(formData);
+      toast.success("Password changed successfully! Redirecting...");
+      reset();
+      setShowPasswordStrength(false);
+
+      // Redirect to home page after showing success message
+      setTimeout(() => {
+        // eslint-disable-next-line react-compiler/react-compiler
+        window.location.href = "/";
+      }, 1500);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Password change failed";
+      toast.error(errorMessage);
     }
   };
 
   const handlePasswordFocus = () => {
     setShowPasswordStrength(true);
-  };
-
-  const validateForm = (): boolean => {
-    try {
-      changePasswordSchema.parse(formData);
-      setErrors({});
-      return true;
-    } catch (error) {
-      const fieldErrors: Partial<Record<keyof ChangePasswordInput, string>> = {};
-      if (error && typeof error === "object" && "issues" in error) {
-        const zodError = error as { issues: { path: (string | number)[]; message: string }[] };
-        zodError.issues?.forEach((err) => {
-          const field = err.path[0] as keyof ChangePasswordInput;
-          fieldErrors[field] = err.message;
-        });
-      }
-      setErrors(fieldErrors);
-      return false;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-    setSuccessMessage("");
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch("/api/auth/change-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     currentPassword: formData.currentPassword,
-      //     newPassword: formData.newPassword,
-      //   }),
-      // });
-      //
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   setFormError(error.message || "Password change failed");
-      //   return;
-      // }
-
-      // Success - show message and reset form
-      setSuccessMessage("Password changed successfully!");
-      setFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setShowPasswordStrength(false);
-    } catch {
-      setFormError("Connection error. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -110,19 +65,7 @@ export function ChangePasswordForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {formError && (
-              <Alert variant="destructive" className="bg-destructive/10 border-destructive">
-                <AlertDescription className="text-destructive">{formError}</AlertDescription>
-              </Alert>
-            )}
-
-            {successMessage && (
-              <Alert className="bg-primary/10 border-primary">
-                <AlertDescription className="text-primary">{successMessage}</AlertDescription>
-              </Alert>
-            )}
-
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentPassword" className="text-foreground">
                 Current Password
@@ -131,16 +74,15 @@ export function ChangePasswordForm() {
                 id="currentPassword"
                 type="password"
                 placeholder="••••••••"
-                value={formData.currentPassword}
-                onChange={(e) => handleInputChange("currentPassword", e.target.value)}
+                {...register("currentPassword")}
                 className={`bg-background text-foreground border-input focus:border-primary ${
                   errors.currentPassword ? "border-destructive" : ""
                 }`}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 aria-invalid={!!errors.currentPassword}
                 aria-describedby={errors.currentPassword ? "currentPassword-error" : undefined}
               />
-              {errors.currentPassword && <FormFieldError error={errors.currentPassword} />}
+              {errors.currentPassword && <FormFieldError error={errors.currentPassword.message} />}
             </div>
 
             <div className="space-y-2">
@@ -151,18 +93,17 @@ export function ChangePasswordForm() {
                 id="newPassword"
                 type="password"
                 placeholder="••••••••"
-                value={formData.newPassword}
-                onChange={(e) => handleInputChange("newPassword", e.target.value)}
+                {...register("newPassword")}
                 onFocus={handlePasswordFocus}
                 className={`bg-background text-foreground border-input focus:border-primary ${
                   errors.newPassword ? "border-destructive" : ""
                 }`}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 aria-invalid={!!errors.newPassword}
                 aria-describedby={errors.newPassword ? "newPassword-error" : undefined}
               />
-              {errors.newPassword && <FormFieldError error={errors.newPassword} />}
-              {showPasswordStrength && <PasswordStrengthIndicator password={formData.newPassword} />}
+              {errors.newPassword && <FormFieldError error={errors.newPassword.message} />}
+              {showPasswordStrength && <PasswordStrengthIndicator password={newPassword} />}
             </div>
 
             <div className="space-y-2">
@@ -173,32 +114,31 @@ export function ChangePasswordForm() {
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                {...register("confirmPassword")}
                 className={`bg-background text-foreground border-input focus:border-primary ${
                   errors.confirmPassword ? "border-destructive" : ""
                 }`}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 aria-invalid={!!errors.confirmPassword}
                 aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
               />
-              {errors.confirmPassword && <FormFieldError error={errors.confirmPassword} />}
+              {errors.confirmPassword && <FormFieldError error={errors.confirmPassword.message} />}
             </div>
 
             <div className="flex gap-4 pt-4">
               <Button
                 type="submit"
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
-                {isLoading ? "Changing password..." : "Change password"}
+                {isSubmitting ? "Changing password..." : "Change password"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="border-border text-foreground hover:bg-muted"
                 onClick={() => window.history.back()}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
