@@ -34,8 +34,6 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
       recoveryToken = params.get("code") || "";
     }
 
-    console.log("Recovery token:", recoveryToken); // Debug log
-
     // Validate that token is provided
     if (!recoveryToken) {
       setIsTokenValid(false);
@@ -44,21 +42,6 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
     }
 
     setToken(recoveryToken);
-
-    // TODO: Validate token on mount when backend is ready
-    // const validateToken = async () => {
-    //   try {
-    //     const response = await fetch(`/api/auth/validate-token?token=${recoveryToken}`);
-    //     if (!response.ok) {
-    //       setIsTokenValid(false);
-    //       setFormError("Reset link is invalid or expired");
-    //     }
-    //   } catch (error) {
-    //     setIsTokenValid(false);
-    //     setFormError("Failed to validate reset link");
-    //   }
-    // };
-    // validateToken();
   }, [tokenProp]);
 
   const handleInputChange = (field: keyof Omit<ResetPasswordInput, "token">, value: string) => {
@@ -108,28 +91,25 @@ export function ResetPasswordForm({ token: tokenProp }: ResetPasswordFormProps) 
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch("/api/auth/reset-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     token,
-      //     password: formData.password,
-      //   }),
-      // });
-      //
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   setFormError(error.message || "Password reset failed");
-      //   return;
-      // }
-      //
-      // // Redirect to login with success message
-      // window.location.href = "/auth/login?message=password-reset-success";
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+        }),
+      });
 
-      // Mock success for UI demonstration
-      console.log("Reset password form submitted:", { token, password: formData.password });
-      setFormError("Backend not implemented yet. Form validation successful!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setFormError(data.message || "Password reset failed");
+        return;
+      }
+
+      // Redirect to login with success message
+      window.location.href = "/auth/login?message=password-reset-success";
     } catch {
       setFormError("Connection error. Please try again.");
     } finally {
