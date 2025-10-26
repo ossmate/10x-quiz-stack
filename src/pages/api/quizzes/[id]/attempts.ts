@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { QuizAttemptDTO } from "@/types";
+import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -8,7 +9,7 @@ export const prerender = false;
  * POST /api/quizzes/[id]/attempts
  * Create a new quiz attempt
  */
-export const POST: APIRoute = async ({ params, locals }) => {
+export const POST: APIRoute = async ({ params, request, cookies }) => {
   try {
     const quizId = params.id;
 
@@ -28,22 +29,28 @@ export const POST: APIRoute = async ({ params, locals }) => {
       });
     }
 
-    // Use Supabase client from locals (middleware provides service role client for API routes)
-    const supabaseClient = locals.supabase;
+    // Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
 
-    // Get current user ID (from environment for now, will use session later)
-    const currentUserId = import.meta.env.DEFAULT_USER_ID;
-    if (!currentUserId) {
+    // Check authentication using SSR client
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+    if (!session) {
       return new Response(JSON.stringify({ message: "User not authenticated" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
+    const currentUserId = session.user.id;
 
-    // Verify quiz exists
+    // Verify quiz exists and user has access (owner OR quiz is public)
     const { data: quiz, error: quizError } = await supabaseClient
       .from("quizzes")
-      .select("id")
+      .select("id, user_id, status")
       .eq("id", quizId)
       .is("deleted_at", null)
       .single();
@@ -53,6 +60,15 @@ export const POST: APIRoute = async ({ params, locals }) => {
       console.error("Quiz verification failed:", quizError);
       return new Response(JSON.stringify({ message: "Quiz not found" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Check access permission: user is owner OR quiz is public
+    const hasAccess = quiz.user_id === currentUserId || quiz.status === "public";
+    if (!hasAccess) {
+      return new Response(JSON.stringify({ message: "You don't have access to this quiz" }), {
+        status: 403,
         headers: { "Content-Type": "application/json" },
       });
     }

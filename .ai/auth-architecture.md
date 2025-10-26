@@ -1634,6 +1634,66 @@ EXECUTE FUNCTION update_updated_at_column();
 
 ---
 
+## Best Practices & Common Pitfalls
+
+### Authentication Consistency (CRITICAL)
+
+**Problem**: Inconsistent user ID usage across pages and API endpoints can cause authorization failures, especially for draft/unpublished content.
+
+**Solution**: Always use session-based authentication consistently across the entire request flow:
+
+#### ✅ Correct Pattern for Astro Pages:
+```typescript
+// In .astro files (e.g., /pages/quizzes/[id]/take.astro)
+const currentUserId = Astro.locals.user?.id || null;
+```
+
+#### ✅ Correct Pattern for API Endpoints:
+```typescript
+// In API routes (e.g., /pages/api/quizzes/[id]/attempts.ts)
+import { createSupabaseServerInstance } from "path/to/db/supabase.client.ts";
+
+export const POST: APIRoute = async ({ params, request, cookies }) => {
+  const supabaseClient = createSupabaseServerInstance({
+    cookies,
+    headers: request.headers,
+  });
+
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+    return new Response(JSON.stringify({ message: "User not authenticated" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const currentUserId = session.user.id;
+  // Use currentUserId for authorization checks...
+}
+```
+
+#### ❌ NEVER Use Environment Variables for User ID:
+```typescript
+// WRONG - Don't do this!
+const currentUserId = import.meta.env.DEFAULT_USER_ID;
+```
+
+**Why This Matters**:
+- **Access Control**: Draft/unpublished quizzes use owner-based access control (`quiz.user_id === currentUserId || quiz.status === "public"`)
+- **Consistency**: Both pages and API endpoints must use the same user ID source
+- **Security**: Environment variables are static and don't represent the actual authenticated user
+
+**Affected Features**:
+- Taking draft quizzes (requires owner check)
+- Creating quiz attempts (requires matching user ID)
+- Submitting quiz responses (requires matching user ID)
+- Editing quizzes (requires owner check)
+
+---
+
 ## Summary
 
 This authentication architecture provides:
@@ -1652,5 +1712,6 @@ This authentication architecture provides:
 ✅ **Type safety**: Full TypeScript coverage with proper types
 ✅ **Service layer**: Reusable authentication service
 ✅ **Compatibility**: Preserves existing quiz functionality
+✅ **Consistent authentication**: Session-based user ID across all pages and API endpoints
 
 The implementation follows the project's coding standards and integrates seamlessly with the existing Astro + React + Supabase stack.

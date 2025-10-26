@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
+import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -17,7 +18,7 @@ const quizResponsesSchema = z.object({
  * POST /api/attempts/[attemptId]/responses
  * Submit quiz responses for an attempt
  */
-export const POST: APIRoute = async ({ params, request, locals }) => {
+export const POST: APIRoute = async ({ params, request, cookies }) => {
   try {
     const { attemptId } = params;
 
@@ -29,17 +30,23 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
-    // Use Supabase client from locals (middleware provides service role client for API routes)
-    const supabaseClient = locals.supabase;
+    // Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
 
-    // Get current user ID
-    const currentUserId = import.meta.env.DEFAULT_USER_ID;
-    if (!currentUserId) {
+    // Check authentication using SSR client
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+    if (!session) {
       return new Response(JSON.stringify({ message: "User not authenticated" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
+    const currentUserId = session.user.id;
 
     // Parse and validate request body
     const body = await request.json();
