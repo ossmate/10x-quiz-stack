@@ -1,0 +1,27 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { AttemptResultsContainer } from "../../../components/quiz-taking/AttemptResultsContainer";
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+// Get attemptId from query parameter
+const url = new URL(Astro.request.url);
+const attemptId = url.searchParams.get("attemptId");
+
+if (!id) {
+  return Astro.redirect("/404");
+}
+
+if (!attemptId) {
+  return Astro.redirect(`/quizzes/${id}`);
+}
+
+const title = "Quiz Results";
+const description = "View your quiz attempt results";
+---
+
+<Layout title={title} description={description}>
+  <AttemptResultsContainer attemptId={attemptId} quizId={id} client:load />
+</Layout>
