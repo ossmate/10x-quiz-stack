@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { GenerationForm } from "./GenerationForm";
 import { LoadingIndicator } from "./LoadingIndicator";
@@ -9,12 +9,40 @@ import { useEditableQuiz } from "../hooks/useEditableQuiz";
 import { useStickyFooter } from "../hooks/ui/useStickyFooter";
 import type { QuizDetailDTO, AIQuizGenerationDTO, QuizUpdateDTO } from "../../types";
 
+interface UserQuota {
+  used: number;
+  limit: number;
+  remaining: number;
+  hasReachedLimit: boolean;
+}
+
 /**
  * AIQuizGenerator - Main component for the AI quiz generation workflow
  */
 export function AIQuizGenerator() {
   // Use our custom hooks for state management
   const { state, generateQuiz, resetGeneration, toggleEdit, updateGeneratedQuiz, publishQuiz } = useAIQuizGeneration();
+
+  // Quota state
+  const [quota, setQuota] = useState<UserQuota | null>(null);
+
+  // Fetch quota on mount
+  useEffect(() => {
+    fetchQuota();
+  }, []);
+
+  const fetchQuota = async () => {
+    try {
+      const response = await fetch("/api/user/ai-quota");
+      if (response.ok) {
+        const data = await response.json();
+        setQuota(data);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to fetch quota:", error);
+    }
+  };
 
   // Sticky footer behavior using IntersectionObserver
   const { isSticky: isFooterSticky, sentinelRef } = useStickyFooter({
@@ -91,7 +119,17 @@ export function AIQuizGenerator() {
     <div className="space-y-6">
       {/* Idle State - Show Generation Form */}
       {state.status === "idle" && (
-        <GenerationForm onSubmit={handleGenerateQuiz} isLoading={false} error={state.error} />
+        <GenerationForm
+          onSubmit={handleGenerateQuiz}
+          isLoading={false}
+          error={state.error}
+          isDisabled={quota?.hasReachedLimit || false}
+          quotaMessage={
+            quota?.hasReachedLimit
+              ? `You have reached your limit of ${quota.limit} AI-generated quizzes. Delete some existing AI-generated quizzes to generate more.`
+              : undefined
+          }
+        />
       )}
 
       {/* Generating State - Show Loading Indicator */}

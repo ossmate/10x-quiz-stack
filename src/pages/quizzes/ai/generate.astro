@@ -1,6 +1,7 @@
 ---
 import ManagementLayout from "../../../layouts/ManagementLayout.astro";
 import { AIQuizGenerator } from "../../../components/quizzes/AIQuizGenerator";
+import { AIQuotaDisplay } from "../../../components/quizzes/AIQuotaDisplay";
 import { Breadcrumbs } from "../../../components/management/Breadcrumbs";
 import type { BreadcrumbItem } from "../../../types/management.types";
 
@@ -34,6 +35,11 @@ const breadcrumbs: BreadcrumbItem[] = [
   <div class="mb-6">
     <h1 class="text-3xl font-bold text-foreground">Generate Quiz with AI</h1>
     <p class="text-muted-foreground mt-2">Create a quiz automatically using AI by providing a descriptive prompt</p>
+  </div>
+
+  <!-- Quota Display -->
+  <div class="mb-6">
+    <AIQuotaDisplay client:load />
   </div>
 
   <div class="bg-card rounded-lg shadow-md p-6">

@@ -37,6 +37,15 @@ export class AIQuizClientService {
       // Handle non-successful responses
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+
+        // Special handling for quota limit errors (429 Too Many Requests)
+        if (response.status === 429) {
+          const quotaInfo = errorData.quota ? ` (${errorData.quota.used}/${errorData.quota.limit} used)` : "";
+          throw new Error(
+            errorData.message || `You have reached your AI quiz generation limit${quotaInfo}. Please try again later.`
+          );
+        }
+
         throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
