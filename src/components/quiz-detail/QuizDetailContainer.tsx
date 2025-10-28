@@ -186,6 +186,7 @@ export function QuizDetailContainer({ quizId, currentUserId }: QuizDetailContain
     <QuizDetailContent
       quiz={quiz}
       isOwner={isOwner}
+      currentUserId={currentUserId}
       onEdit={handleEdit}
       onDelete={handleDelete}
       onStartQuiz={handleStartQuiz}

@@ -2,10 +2,12 @@ import type { QuizDetailDTO } from "../../types.ts";
 import { QuizHeader } from "./QuizHeader.tsx";
 import { QuizQuestions } from "./QuizQuestions.tsx";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog.tsx";
+import { QuizAttemptHistory } from "../QuizAttempts/QuizAttemptHistory.tsx";
 
 interface QuizDetailContentProps {
   quiz: QuizDetailDTO;
   isOwner: boolean;
+  currentUserId?: string;
   onEdit: () => void;
   onDelete: () => void;
   onStartQuiz: () => void;
@@ -26,6 +28,7 @@ interface QuizDetailContentProps {
 export function QuizDetailContent({
   quiz,
   isOwner,
+  currentUserId,
   onEdit,
   onDelete,
   onStartQuiz,
@@ -54,15 +57,18 @@ export function QuizDetailContent({
           onUnpublish={onUnpublish}
         />
 
+        {/* Quiz Attempt History Section - Scoreboard (placed before questions for better visibility) */}
+        <QuizAttemptHistory quizId={quiz.id} userId={currentUserId} />
+
         {/* Questions Section */}
         <section className="mt-8">
           {hasQuestions && quiz.questions ? (
             <QuizQuestions questions={quiz.questions} showCorrectAnswers={isOwner} />
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">This quiz has no questions yet.</p>
+              <p className="text-muted-foreground text-lg">This quiz has no questions yet.</p>
               {isOwner && (
-                <button onClick={onEdit} className="mt-4 text-blue-600 hover:text-blue-800 underline">
+                <button onClick={onEdit} className="mt-4 text-primary hover:underline">
                   Add questions to this quiz
                 </button>
               )}

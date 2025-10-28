@@ -200,6 +200,8 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
       }
 
       const calculatedScore = calculateScore(quiz, userAnswers);
+      const totalQuestions = quiz.questions?.length || 0;
+      const scorePercentage = totalQuestions > 0 ? Math.round((calculatedScore / totalQuestions) * 100) : 0;
 
       // For regular quizzes, save to database
       if (!attempt) {
@@ -233,14 +235,14 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
         throw new Error(errorData.message || "Failed to submit answers. Please try again.");
       }
 
-      // Update attempt with score
+      // Update attempt with score (as percentage)
       const updateResponse = await fetch(`/api/quizzes/${quizId}/attempts/${attempt.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           status: "completed",
-          score: calculatedScore,
+          score: scorePercentage,
           completed_at: new Date().toISOString(),
         }),
       });

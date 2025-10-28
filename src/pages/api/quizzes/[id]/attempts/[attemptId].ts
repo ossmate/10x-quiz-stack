@@ -75,7 +75,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     // Verify attempt exists and belongs to current user
     const { data: existingAttempt, error: fetchError } = await supabaseClient
       .from("quiz_attempts")
-      .select("id, user_id, quiz_id")
+      .select("id, user_id, quiz_id, created_at")
       .eq("id", attemptId)
       .eq("quiz_id", quizId)
       .single();
@@ -94,12 +94,18 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       });
     }
 
+    // Calculate time spent in seconds
+    const startTime = new Date(existingAttempt.created_at).getTime();
+    const endTime = new Date(completed_at).getTime();
+    const timeSpentSeconds = Math.round((endTime - startTime) / 1000);
+
     // Update the attempt
     const { data: updatedAttempt, error: updateError } = await supabaseClient
       .from("quiz_attempts")
       .update({
         score,
         completed_at,
+        time_spent: timeSpentSeconds,
       })
       .eq("id", attemptId)
       .select()
