@@ -32,17 +32,18 @@ export const GET: APIRoute = async ({ params, request, cookies }) => {
 
   // Check authentication
   const {
-    data: { session },
-  } = await supabaseClient.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabaseClient.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return new Response(JSON.stringify({ error: "Authentication required" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  const currentUserId = session.user.id;
+  const currentUserId = user.id;
 
   try {
     // Fetch attempt

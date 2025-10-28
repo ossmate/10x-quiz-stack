@@ -43,15 +43,16 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 
     // Check authentication using SSR client
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    if (!session) {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ message: "User not authenticated" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
-    const currentUserId = session.user.id;
+    const currentUserId = user.id;
 
     // Parse and validate request body
     const body = await request.json();
