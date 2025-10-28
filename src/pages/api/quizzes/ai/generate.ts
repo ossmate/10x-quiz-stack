@@ -1,12 +1,9 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
-
 import { aiQuizGeneratorService } from "../../../../lib/services/ai-quiz-generator.service.ts";
+import { AIQuotaService } from "../../../../lib/services/ai-quota.service.ts";
 import { aiQuizGenerationSchema } from "../../../../lib/validation/ai-quiz-generation.schema.ts";
-import { getDefaultUserId } from "../../../../lib/utils/auth.ts";
 import type { AIGeneratedQuizPreview, QuizSource } from "../../../../types.ts";
-
-import type { Database } from "../../../../db/database.types.ts";
+import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -26,63 +23,19 @@ export const prerender = false;
  * @returns 503 Service Unavailable - AI service error
  * @returns 500 Internal Server Error - Unexpected error
  */
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // Create a Supabase client with service role key for database operations
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.SUPABASE_URL;
-    let supabaseClient = locals.supabase;
+    // Create SSR-compatible client for authentication
+    const supabaseClient = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
 
-    // Check if Supabase URL is available
-    if (!supabaseUrl) {
-      return new Response(
-        JSON.stringify({
-          error: "Configuration Error",
-          message: "Supabase URL is not configured. Please check your environment variables.",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Use service role key if available to bypass RLS
-    if (serviceRoleKey) {
-      try {
-        supabaseClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        return new Response(
-          JSON.stringify({
-            error: "Database Configuration Error",
-            message: "Failed to create Supabase client with service role key.",
-            details: errorMessage,
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
-    // TESTING: Authentication check disabled for easier development
-    // In production, uncomment and use these lines instead:
-    /*
     // Check for authentication
     const {
       data: { session },
     } = await supabaseClient.auth.getSession();
+
     if (!session) {
       return new Response(
         JSON.stringify({
@@ -99,14 +52,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const userId = session.user.id;
-    */
 
-    // For testing: Use the default user ID from environment
-    const userId = getDefaultUserId();
+    // Step 2: Check quota before generation
+    const quotaService = new AIQuotaService();
+    const canGenerate = await quotaService.canGenerateQuiz(supabaseClient, userId);
 
-    // User ID should be available from the session at this point
+    if (!canGenerate) {
+      const quota = await quotaService.getUserQuota(supabaseClient, userId);
+      return new Response(
+        JSON.stringify({
+          error: "Quota Limit Reached",
+          message: `You have reached your limit of ${quota.limit} AI-generated quizzes.`,
+          quota: quota,
+        }),
+        {
+          status: 429, // Too Many Requests
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
 
-    // Step 2: Parse and validate request body
+    // Step 3: Parse and validate request body
     let body;
     try {
       body = await request.json();
@@ -125,7 +93,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // Step 3: Validate input against schema
+    // Step 4: Validate input against schema
     const validationResult = aiQuizGenerationSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -151,7 +119,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { prompt } = validationResult.data;
 
-    // Step 4: Generate quiz content using AI service
+    // Step 5: Generate quiz content using AI service
     const command = aiQuizGeneratorService.createCommand(prompt);
     let aiGenerationResult;
 
@@ -230,7 +198,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         // Silently handle non-critical logging errors
       });
 
-    // Step 6: Create a quiz preview from the AI generated content
+    // Step 7: Create a quiz preview from the AI generated content
     const quizPreview: AIGeneratedQuizPreview = {
       title: aiGenerationResult.content.title,
       description: aiGenerationResult.content.description || "",
@@ -250,7 +218,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       })),
     };
 
-    // Step 7: Return quiz preview with 201 status
+    // Step 8: Return quiz preview with 201 status
     return new Response(JSON.stringify(quizPreview), {
       status: 201,
       headers: {
