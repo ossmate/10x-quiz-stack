@@ -78,7 +78,7 @@ export function useQuizAttemptHistory(params: UseQuizAttemptHistoryParams): UseQ
         // Transform attempts to ensure score is a percentage and time_spent is calculated
         // Legacy attempts may have raw counts instead of percentages and missing time_spent
         const transformedAttempts = (data.attempts || []).map((attempt) => {
-          let transformedAttempt = { ...attempt };
+          const transformedAttempt = { ...attempt };
 
           // If score is less than or equal to total_questions, it's likely a raw count
           // Convert it to percentage

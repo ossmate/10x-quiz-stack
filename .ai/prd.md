@@ -23,12 +23,14 @@ Modern programmers and job interview candidates often struggle with a boring and
   - Page with public quiz sets (accessible to all users)
 - Generating Quizzes using AI (requires authentication):
   - Automatically creating a quiz based on provided context
+  - Limited to 2 AI-generated quizzes per user (configurable for future expansion)
 
 ## 4. Product Boundaries
 
 - Progress tracking of quiz taking is not included
 - There is no support for handling a wide range of question types
 - A ranking system for best scores is not part of the MVP
+- AI quiz generation is limited to 2 quizzes per user in MVP (designed for future role-based or credit-based expansion)
 
 ## 5. User Stories
 
@@ -111,13 +113,18 @@ Modern programmers and job interview candidates often struggle with a boring and
 ### US-008: Generating a Quiz using AI
 
 - Title: Automatic Quiz Creation
-- Description: A logged-in user can generate a new quiz based on a provided text or topic, using AI mechanisms to prepare questions.
+- Description: A logged-in user can generate a new quiz based on a provided text or topic, using AI mechanisms to prepare questions. Users have a quota limit to control resource usage.
 - Acceptance Criteria:
   - Only logged-in users can access the AI quiz generation feature
   - Unauthenticated users attempting to generate a quiz are redirected to login
+  - Users can see their remaining AI generation quota before generating
+  - Users are limited to 2 AI-generated quizzes (configurable via environment variables)
+  - The system prevents generation when quota limit is reached
+  - Clear error message is displayed when limit is exceeded
   - The user selects the option to generate a quiz
   - The system creates a set of questions based on the given criteria
   - The generated quiz can be edited before publication
+  - Quota count updates after successful quiz generation
 
 ## 6. Success Metrics
 

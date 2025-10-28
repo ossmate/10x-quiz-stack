@@ -125,9 +125,6 @@ export function AttemptResultsContainer({ attemptId, quizId }: AttemptResultsCon
   if (state.phase === "loaded" && state.data) {
     const { attempt, quiz, userAnswers } = state.data;
 
-    // Calculate percentage
-    const percentage = attempt.total_questions > 0 ? (attempt.score / attempt.total_questions) * 100 : 0;
-
     // Build QuizResult object
     const result: QuizResult = {
       attemptId: attempt.id,
