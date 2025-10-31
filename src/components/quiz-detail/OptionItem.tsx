@@ -39,14 +39,14 @@ export function OptionItem({ option, optionLetter, showCorrectAnswers }: OptionI
     <li
       className={cn(
         "flex items-start gap-3 p-4 rounded-lg border transition-colors",
-        showCorrectIndicator ? "bg-green-50 border-green-300" : "bg-gray-50 border-gray-200"
+        showCorrectIndicator ? "bg-accent/50 border-accent" : "bg-card border-border"
       )}
     >
       {/* Option Letter */}
       <span
         className={cn(
           "flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0",
-          showCorrectIndicator ? "bg-green-600 text-white" : "bg-gray-300 text-gray-700"
+          showCorrectIndicator ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
         )}
         aria-label={`Option ${optionLetter}`}
       >
@@ -54,13 +54,13 @@ export function OptionItem({ option, optionLetter, showCorrectAnswers }: OptionI
       </span>
 
       {/* Option Content */}
-      <p className="flex-1 text-gray-900 text-base pt-1">{option.content}</p>
+      <p className="flex-1 text-foreground text-base pt-1">{option.content}</p>
 
       {/* Correct Answer Indicator */}
       {showCorrectIndicator && (
         <div className="flex items-center gap-1 flex-shrink-0">
-          <CheckIcon className="text-green-600" />
-          <span className="text-sm font-medium text-green-700" aria-label="Correct answer">
+          <CheckIcon className="text-primary" />
+          <span className="text-sm font-medium text-primary" aria-label="Correct answer">
             Correct
           </span>
         </div>

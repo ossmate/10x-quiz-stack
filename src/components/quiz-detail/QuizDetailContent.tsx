@@ -63,7 +63,7 @@ export function QuizDetailContent({
         {/* Questions Section */}
         <section className="mt-8">
           {hasQuestions && quiz.questions ? (
-            <QuizQuestions questions={quiz.questions} showCorrectAnswers={isOwner} />
+            <QuizQuestions questions={quiz.questions} isOwner={isOwner} />
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">This quiz has no questions yet.</p>
