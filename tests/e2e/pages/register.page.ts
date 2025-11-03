@@ -9,7 +9,6 @@ export class RegisterPage {
 
   // Form elements
   readonly emailInput: Locator;
-  readonly usernameInput: Locator;
   readonly passwordInput: Locator;
   readonly confirmPasswordInput: Locator;
   readonly submitButton: Locator;
@@ -20,7 +19,6 @@ export class RegisterPage {
   // Error/Success messages
   readonly formError: Locator;
   readonly emailError: Locator;
-  readonly usernameError: Locator;
   readonly passwordError: Locator;
   readonly confirmPasswordError: Locator;
 
@@ -32,7 +30,6 @@ export class RegisterPage {
 
     // Form inputs using accessible labels
     this.emailInput = page.getByLabel(/^email$/i);
-    this.usernameInput = page.getByLabel(/^username$/i);
     this.passwordInput = page.getByLabel(/^password$/i).first();
     this.confirmPasswordInput = page.getByLabel(/confirm password/i);
 
@@ -45,7 +42,6 @@ export class RegisterPage {
     // Error messages (using data-testid or aria-describedby pattern)
     this.formError = page.locator('[role="alert"]');
     this.emailError = page.locator("#email-error");
-    this.usernameError = page.locator("#username-error");
     this.passwordError = page.locator("#password-error");
     this.confirmPasswordError = page.locator("#confirmPassword-error");
 
@@ -64,9 +60,8 @@ export class RegisterPage {
   /**
    * Fill the registration form with provided data
    */
-  async fillRegistrationForm(data: { email: string; username: string; password: string; confirmPassword: string }) {
+  async fillRegistrationForm(data: { email: string; password: string; confirmPassword: string }) {
     await this.emailInput.fill(data.email);
-    await this.usernameInput.fill(data.username);
     await this.passwordInput.fill(data.password);
     await this.confirmPasswordInput.fill(data.confirmPassword);
   }
@@ -82,13 +77,12 @@ export class RegisterPage {
    * Complete registration with valid data
    * Generates a unique user to avoid conflicts
    */
-  async register(baseUsername = "testuser") {
+  async register(baseEmail = "testuser") {
     const timestamp = Date.now();
     const userData = {
-      email: `${baseUsername}_${timestamp}@example.com`,
-      username: `${baseUsername}_${timestamp}`,
-      password: "TestPass123",
-      confirmPassword: "TestPass123",
+      email: `${baseEmail}_${timestamp}@example.com`,
+      password: "TestPass123!",
+      confirmPassword: "TestPass123!",
     };
 
     await this.fillRegistrationForm(userData);
@@ -120,13 +114,6 @@ export class RegisterPage {
     await expect(this.emailError).toContainText(message);
   }
 
-  /**
-   * Verify username field error
-   */
-  async expectUsernameError(message: string | RegExp) {
-    await expect(this.usernameError).toBeVisible();
-    await expect(this.usernameError).toContainText(message);
-  }
 
   /**
    * Verify password field error

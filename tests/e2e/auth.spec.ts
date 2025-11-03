@@ -44,7 +44,7 @@ test.describe("Authentication Flow", () => {
     await dashboardPage.expectDashboardVisible();
 
     // Verify user is on dashboard URL
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/dashboard");
   });
 
   /**
@@ -166,8 +166,8 @@ test.describe("Authentication Flow", () => {
     expect(await isAuthenticated(page)).toBe(true);
 
     // Navigate to dashboard
-    await page.goto("/");
-    await expect(page).toHaveURL("/");
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL("/dashboard");
 
     // Navigate to AI generate (protected)
     await page.goto("/quizzes/ai/generate");
@@ -175,8 +175,8 @@ test.describe("Authentication Flow", () => {
     // Should NOT redirect to login
 
     // Navigate back to dashboard
-    await page.goto("/");
-    await expect(page).toHaveURL("/");
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL("/dashboard");
 
     // User should still be authenticated (no redirect to login)
     await expect(page).not.toHaveURL(/\/auth\/login/);
@@ -194,7 +194,7 @@ test.describe("Authentication Flow", () => {
     await page.goto("/auth/login");
 
     // Should redirect to dashboard
-    await expect(page).toHaveURL("/", { timeout: 5000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 5000 });
   });
 
   /**
@@ -209,7 +209,7 @@ test.describe("Authentication Flow", () => {
     await page.goto("/auth/register");
 
     // Should redirect to dashboard
-    await expect(page).toHaveURL("/", { timeout: 5000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 5000 });
   });
 
   /**
@@ -221,8 +221,8 @@ test.describe("Authentication Flow", () => {
     await loginAsTestUser(page);
 
     // Verify authenticated
-    await page.goto("/");
-    await expect(page).toHaveURL("/");
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL("/dashboard");
 
     // Logout
     await logout(page);
@@ -311,7 +311,7 @@ test.describe("Page Object Model Validation", () => {
 
     // Verify all critical elements are visible and functional
     await expect(loginPage.heading).toBeVisible();
-    await expect(loginPage.emailOrUsernameInput).toBeVisible();
+    await expect(loginPage.emailInput).toBeVisible();
     await expect(loginPage.passwordInput).toBeVisible();
     await expect(loginPage.submitButton).toBeVisible();
     await expect(loginPage.registerLink).toBeVisible();
@@ -338,19 +338,11 @@ test.describe("Page Object Model Validation", () => {
     // Start unauthenticated
     await page.context().clearCookies();
 
-    // Try dashboard
-    await page.goto("/");
+    // Try dashboard (protected route)
+    await page.goto("/dashboard");
 
-    // For unauthenticated user, might redirect to landing page or login
-    // Verify we're NOT on a protected route
-    const url = page.url();
-    const isOnProtectedContent =
-      url === "http://localhost:4321/" && !(await page.locator('[href="/auth/login"]').count());
-
-    if (!isOnProtectedContent) {
-      // User was redirected, which is expected
-      expect(url).toBeTruthy();
-    }
+    // For unauthenticated user, should redirect to login
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
   });
 });
 
@@ -372,7 +364,7 @@ test.describe("Authentication API", () => {
     expect(response.status()).toBe(200);
 
     // Verify redirect happened
-    await expect(page).toHaveURL("/", { timeout: 10000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 10000 });
   });
 
   test("should return error for invalid credentials via API", async ({ page }) => {

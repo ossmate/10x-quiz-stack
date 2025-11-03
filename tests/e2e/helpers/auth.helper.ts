@@ -12,7 +12,6 @@ import { LoginPage } from "../pages/login.page";
  * Test user credentials from .env.test
  */
 export const TEST_USER = {
-  id: process.env.E2E_USERNAME_ID!,
   email: process.env.E2E_USERNAME!,
   password: process.env.E2E_PASSWORD!,
 };
@@ -21,9 +20,9 @@ export const TEST_USER = {
  * Validate that test credentials are available
  */
 export function validateTestCredentials() {
-  if (!TEST_USER.id || !TEST_USER.email || !TEST_USER.password) {
+  if (!TEST_USER.email || !TEST_USER.password) {
     throw new Error(
-      "E2E test credentials not found in .env.test. Please ensure E2E_USERNAME_ID, E2E_USERNAME, and E2E_PASSWORD are set."
+      "E2E test credentials not found in .env.test. Please ensure E2E_USERNAME and E2E_PASSWORD are set."
     );
   }
 }
@@ -74,11 +73,13 @@ export async function isAuthenticated(page: Page): Promise<boolean> {
 }
 
 /**
- * Logout by navigating to logout endpoint
+ * Logout by navigating to logout page which handles server-side logout
  */
 export async function logout(page: Page) {
   await page.goto("/auth/logout");
   await page.waitForLoadState("networkidle");
+  // After logout, should redirect to home page
+  await page.waitForURL("/", { timeout: 5000 });
 }
 
 /**
