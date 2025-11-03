@@ -99,6 +99,36 @@ export function useAIQuizGeneration() {
       throw new Error("Quiz must have at least one question");
     }
 
+    // Sanitize questions - filter out empty questions, placeholder text, and empty options
+    const sanitizedQuestions = quiz.questions
+      .filter((q) => {
+        const content = q.content?.trim() || "";
+        // Filter out empty questions and placeholder text
+        return content.length > 0 && content !== "New question";
+      })
+      .map((q, qIndex) => ({
+        content: q.content.trim(),
+        explanation: q.explanation,
+        position: qIndex + 1, // Reindex positions after filtering
+        options: q.options
+          .filter((opt) => {
+            const content = opt.content?.trim() || "";
+            // Filter out empty options and placeholders like "Option 1", "Option 2", "New option"
+            return content.length > 0 && !/^(Option \d+|New option)$/i.test(content);
+          })
+          .map((opt, optIndex) => ({
+            content: opt.content.trim(),
+            is_correct: opt.is_correct,
+            position: optIndex + 1, // Reindex positions after filtering
+          })),
+      }))
+      .filter((q) => q.options.length >= 2); // Remove questions with less than 2 valid options
+
+    // Validate sanitized data
+    if (sanitizedQuestions.length === 0) {
+      throw new Error("Quiz must have at least one valid question with 2 or more options");
+    }
+
     // Set publishing state
     setState((prev) => ({
       ...prev,
@@ -112,22 +142,13 @@ export function useAIQuizGeneration() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: quiz.title,
-          description: quiz.description || "",
+          title: quiz.title.trim(),
+          description: quiz.description?.trim() || "",
           source: quiz.source || "ai_generated",
           ai_model: quiz.ai_model,
           ai_prompt: quiz.ai_prompt,
           ai_temperature: quiz.ai_temperature,
-          questions: quiz.questions.map((q) => ({
-            content: q.content,
-            explanation: q.explanation,
-            position: q.position,
-            options: q.options.map((opt) => ({
-              content: opt.content,
-              is_correct: opt.is_correct,
-              position: opt.position,
-            })),
-          })),
+          questions: sanitizedQuestions,
         }),
       });
 

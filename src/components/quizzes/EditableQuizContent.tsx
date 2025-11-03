@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import type { QuizDetailDTO, QuestionWithOptionsDTO, OptionDTO, QuizUpdateDTO } from "../../types";
 import { useStickyFooter } from "../hooks/ui/useStickyFooter";
 
@@ -58,11 +59,40 @@ export function EditableQuizContent({
   // Sticky footer behavior using IntersectionObserver
   const { isSticky: isFooterSticky, sentinelRef } = useStickyFooter();
 
+  // Accordion open state – list of open question IDs
+  const [openIds, setOpenIds] = useState<string[]>([]);
+
   // Ref to store references to question elements for scrolling
   const questionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // State to track the newly added question for highlighting
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
+
+  // Scroll newly highlighted question into view and open accordion
+  useEffect(() => {
+    if (highlightedQuestionId) {
+      // Open accordion for that question first
+      setOpenIds([highlightedQuestionId]);
+
+      // Wait for accordion animation to complete before scrolling
+      const scrollTimer = setTimeout(() => {
+        const el = questionRefs.current.get(highlightedQuestionId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+
+      // Clear highlight after animation completes
+      const highlightTimer = setTimeout(() => {
+        setHighlightedQuestionId(null);
+      }, 2000);
+
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(highlightTimer);
+      };
+    }
+  }, [highlightedQuestionId]);
 
   // Validate the entire quiz and update validation state
   const validateQuiz = useCallback(() => {
@@ -96,23 +126,34 @@ export function EditableQuizContent({
         // Validate question content
         if (!question.content || question.content.trim().length === 0) {
           questionErrors.content = "Question content is required";
+        } else if (question.content.trim() === "New question") {
+          questionErrors.content = "Please edit the question text (default placeholder is not allowed)";
         }
+
+        // Count non-empty options (after trimming)
+        const nonEmptyOptions = question.options?.filter((opt) => opt.content && opt.content.trim().length > 0) || [];
 
         // Validate options
         if (!question.options || question.options.length < 2) {
           questionErrors.content = "Question must have at least 2 options";
+        } else if (nonEmptyOptions.length < 2) {
+          questionErrors.content = "Question must have at least 2 non-empty options";
         } else {
-          // Check if exactly one option is marked as correct
-          const correctOptionsCount = question.options.filter((opt) => opt.is_correct).length;
+          // Check if exactly one non-empty option is marked as correct
+          const correctOptionsCount = nonEmptyOptions.filter((opt) => opt.is_correct).length;
           if (correctOptionsCount !== 1) {
             questionErrors.content = "Question must have exactly one correct answer";
           }
 
           // Validate individual options
           question.options.forEach((option) => {
-            if (!option.content || option.content.trim().length === 0) {
+            const trimmedContent = option.content?.trim() || "";
+            if (!trimmedContent) {
               if (!questionErrors.options) questionErrors.options = {};
               questionErrors.options[option.id] = "Option content is required";
+            } else if (/^(Option \d+|New option)$/i.test(trimmedContent)) {
+              if (!questionErrors.options) questionErrors.options = {};
+              questionErrors.options[option.id] = "Please edit the option text (default placeholder is not allowed)";
             }
           });
         }
@@ -160,23 +201,90 @@ export function EditableQuizContent({
     }
   }, [onChange, editableQuiz]);
 
+  // Sanitize quiz data before saving - remove empty options, questions, and placeholders
+  const sanitizeQuizForSave = (quiz: EditableQuizData): EditableQuizData => {
+    return {
+      ...quiz,
+      questions: quiz.questions
+        ?.filter((question) => {
+          const content = question.content?.trim() || "";
+          // Filter out empty questions and placeholder text
+          return content.length > 0 && content !== "New question";
+        })
+        .map((question) => ({
+          ...question,
+          // Filter out empty options and placeholder text
+          options: question.options
+            ?.filter((option) => {
+              const content = option.content?.trim() || "";
+              // Filter out empty options and placeholders like "Option 1", "Option 2", "New option"
+              return content.length > 0 && !/^(Option \d+|New option)$/i.test(content);
+            })
+            .map((option, index) => ({
+              ...option,
+              position: index + 1, // Reindex positions after filtering
+            })) || [],
+        }))
+        .map((question, index) => ({
+          ...question,
+          position: index + 1, // Reindex question positions
+        })) || [],
+    };
+  };
+
   // Handle saving the quiz
   const handleSave = () => {
-    if (!validateQuiz()) return;
+    // Run validation first
+    const isValidQuiz = validateQuiz();
 
-    // Create update DTO from editable quiz
+    if (!isValidQuiz) {
+      // Validation failed - do not proceed with save
+      console.warn("Cannot save: Quiz has validation errors");
+      return;
+    }
+
+    // Double-check: ensure we have at least one non-empty question before sanitizing
+    const hasValidQuestions = editableQuiz.questions?.some(
+      (q) => q.content && q.content.trim().length > 0
+    );
+
+    if (!hasValidQuestions) {
+      console.error("Cannot save: No valid questions found");
+      return;
+    }
+
+    // Sanitize quiz data (remove empty options/questions)
+    const sanitizedQuiz = sanitizeQuizForSave(editableQuiz);
+
+    // Validate sanitized data - ensure we still have valid content after filtering
+    if (!sanitizedQuiz.questions || sanitizedQuiz.questions.length === 0) {
+      console.error("Cannot save: No valid questions after sanitization");
+      return;
+    }
+
+    // Check each question has at least 2 options after sanitization
+    const hasInvalidQuestion = sanitizedQuiz.questions.some(
+      (q) => !q.options || q.options.length < 2
+    );
+
+    if (hasInvalidQuestion) {
+      console.error("Cannot save: Question has less than 2 valid options after sanitization");
+      return;
+    }
+
+    // Create update DTO from sanitized quiz
     // Cast to QuizUpdateDTO but include the full quiz data (including questions)
     // This allows the component to be used for both metadata-only updates
     // and full quiz updates (creation/editing)
     const updatedQuiz: QuizUpdateDTO = {
-      title: editableQuiz.title,
-      description: editableQuiz.description || "",
-      source: editableQuiz.source,
-      ai_model: editableQuiz.ai_model,
-      ai_prompt: editableQuiz.ai_prompt,
-      ai_temperature: editableQuiz.ai_temperature,
-      // Pass the full quiz as additional property (consumers can cast to get questions)
-      ...(editableQuiz as unknown as Record<string, unknown>),
+      title: sanitizedQuiz.title.trim(),
+      description: sanitizedQuiz.description?.trim() || "",
+      source: sanitizedQuiz.source,
+      ai_model: sanitizedQuiz.ai_model,
+      ai_prompt: sanitizedQuiz.ai_prompt,
+      ai_temperature: sanitizedQuiz.ai_temperature,
+      // Pass the full sanitized quiz as additional property (consumers can cast to get questions)
+      ...(sanitizedQuiz as unknown as Record<string, unknown>),
     };
 
     onSave(updatedQuiz);
@@ -261,24 +369,8 @@ export function EditableQuizContent({
       isDirty: true,
     }));
 
-    // Highlight the newly added question
+    // Trigger highlight - useEffect will handle scrolling and accordion opening
     setHighlightedQuestionId(newQuestionId);
-
-    // Scroll to the newly added question after DOM update
-    setTimeout(() => {
-      const questionElement = questionRefs.current.get(newQuestionId);
-      if (questionElement) {
-        questionElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }, 100);
-
-    // Remove highlight after animation completes
-    setTimeout(() => {
-      setHighlightedQuestionId(null);
-    }, 2500);
   };
 
   // Remove a question
@@ -414,54 +506,52 @@ export function EditableQuizContent({
           )}
 
           {/* Questions List */}
-          <div className="space-y-6">
+          <Accordion type="multiple" value={openIds} onValueChange={setOpenIds} className="space-y-4">
             {editableQuiz.questions && editableQuiz.questions.length > 0 ? (
               editableQuiz.questions.map((question, questionIndex) => {
                 const questionErrors = editableQuiz.validationErrors.questions?.[question.id];
                 const isHighlighted = highlightedQuestionId === question.id;
 
                 return (
-                  <div
+                  <AccordionItem
                     key={question.id}
+                    value={question.id}
                     ref={(el) => {
                       if (el) {
-                        questionRefs.current.set(question.id, el);
+                        questionRefs.current.set(question.id, el as HTMLDivElement);
                       } else {
                         questionRefs.current.delete(question.id);
                       }
                     }}
-                    className={`border rounded-lg p-5 transition-all duration-500 ${
-                      isHighlighted
-                        ? "border-primary bg-primary/10 shadow-lg shadow-primary/20 scale-[1.02]"
-                        : "border-border bg-muted/30 hover:bg-muted/50 transition-colors"
+                    className={`border rounded-lg transition-shadow ${
+                      isHighlighted ? "shadow-lg shadow-primary/20" : ""
                     }`}
                   >
-                    {/* Question Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary font-semibold rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                    <AccordionTrigger className="px-5 py-4">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="bg-primary/10 text-primary font-semibold rounded-full w-8 h-8 flex items-center justify-center text-sm shrink-0">
                           {questionIndex + 1}
                         </span>
-                        <h3 className="text-base font-medium text-foreground">Question {questionIndex + 1}</h3>
+                        <span className="text-base font-medium text-foreground truncate">
+                          {question.content || `Question ${questionIndex + 1}`}
+                        </span>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeQuestion(question.id)}
-                        disabled={isPublishing}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        Remove
-                      </button>
-                    </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-5 pb-6">
+                      {/* Remove question button */}
+                      <div className="flex justify-end mb-4">
+                        <button
+                          type="button"
+                          onClick={() => removeQuestion(question.id)}
+                          disabled={isPublishing}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Remove
+                        </button>
+                      </div>
 
                     {/* Question Content */}
                     <div className="mb-4">
@@ -591,17 +681,18 @@ export function EditableQuizContent({
                         disabled={isPublishing}
                       />
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
-                <p className="text-muted-foreground">
-                  No questions yet. Click &ldquo;Add Question&rdquo; to create your first question.
-                </p>
-              </div>
-            )}
-          </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })
+          ) : (
+            <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
+              <p className="text-muted-foreground">
+                No questions yet. Click &ldquo;Add Question&rdquo; to create your first question.
+              </p>
+            </div>
+          )}
+        </Accordion>
         </div>
 
         {/* Sentinel element to detect bottom of content */}
