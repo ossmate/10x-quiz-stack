@@ -57,14 +57,14 @@ export class DashboardPage {
    * Navigate to dashboard
    */
   async goto() {
-    await this.page.goto("/");
+    await this.page.goto("/dashboard");
   }
 
   /**
    * Wait for dashboard to load
    */
   async waitForLoad() {
-    await expect(this.page).toHaveURL("/");
+    await expect(this.page).toHaveURL("/dashboard");
     // Wait for either tabs to be visible or page to be fully loaded
     await this.page.waitForLoadState("networkidle");
   }
@@ -126,7 +126,7 @@ export class DashboardPage {
    * Verify dashboard is displayed (user is authenticated)
    */
   async expectDashboardVisible() {
-    await expect(this.page).toHaveURL("/");
+    await expect(this.page).toHaveURL("/dashboard");
     // Check for dashboard-specific elements
     await expect(this.myQuizzesTab).toBeVisible();
   }

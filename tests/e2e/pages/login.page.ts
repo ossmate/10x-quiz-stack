@@ -8,7 +8,7 @@ export class LoginPage {
   readonly page: Page;
 
   // Form elements
-  readonly emailOrUsernameInput: Locator;
+  readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
 
@@ -18,7 +18,7 @@ export class LoginPage {
 
   // Error/Success messages
   readonly formError: Locator;
-  readonly emailOrUsernameError: Locator;
+  readonly emailError: Locator;
   readonly passwordError: Locator;
 
   // Page heading
@@ -28,7 +28,7 @@ export class LoginPage {
     this.page = page;
 
     // Form inputs using accessible labels
-    this.emailOrUsernameInput = page.getByLabel(/email or username/i);
+    this.emailInput = page.getByLabel(/^email$/i);
     this.passwordInput = page.getByLabel(/^password$/i);
 
     // Submit button
@@ -40,7 +40,7 @@ export class LoginPage {
 
     // Error messages
     this.formError = page.locator('[role="alert"]');
-    this.emailOrUsernameError = page.locator("#emailOrUsername-error");
+    this.emailError = page.locator("#email-error");
     this.passwordError = page.locator("#password-error");
 
     // Page heading
@@ -60,10 +60,10 @@ export class LoginPage {
    * Fill login form with credentials
    * Uses proper timing to avoid React state conflicts
    */
-  async fillLoginForm(emailOrUsername: string, password: string) {
+  async fillLoginForm(email: string, password: string) {
     // Clear and fill email field
-    await this.emailOrUsernameInput.click();
-    await this.emailOrUsernameInput.fill(emailOrUsername);
+    await this.emailInput.click();
+    await this.emailInput.fill(email);
 
     // Small delay to ensure React state updates
     await this.page.waitForTimeout(100);
@@ -87,8 +87,8 @@ export class LoginPage {
    * Complete login flow with provided credentials
    * Waits for navigation after successful login
    */
-  async login(emailOrUsername: string, password: string) {
-    await this.fillLoginForm(emailOrUsername, password);
+  async login(email: string, password: string) {
+    await this.fillLoginForm(email, password);
 
     // Wait for navigation after form submission (login redirects with window.location.href)
     await Promise.all([
@@ -101,32 +101,25 @@ export class LoginPage {
    * Attempt login without waiting for navigation
    * Use this for testing invalid credentials where login might fail
    */
-  async attemptLogin(emailOrUsername: string, password: string) {
-    await this.fillLoginForm(emailOrUsername, password);
+  async attemptLogin(email: string, password: string) {
+    await this.fillLoginForm(email, password);
     await this.submit();
     // Wait for API response or UI update
     await this.page.waitForTimeout(1000);
   }
 
   /**
-   * Login with email
+   * Login with email (primary method)
    */
   async loginWithEmail(email: string, password: string) {
     await this.login(email, password);
   }
 
   /**
-   * Login with username
-   */
-  async loginWithUsername(username: string, password: string) {
-    await this.login(username, password);
-  }
-
-  /**
    * Wait for successful login redirect to dashboard
    */
   async waitForSuccessRedirect() {
-    await expect(this.page).toHaveURL("/", { timeout: 10000 });
+    await expect(this.page).toHaveURL("/dashboard", { timeout: 10000 });
   }
 
   /**
@@ -145,11 +138,11 @@ export class LoginPage {
   }
 
   /**
-   * Verify email/username field error
+   * Verify email field error
    */
-  async expectEmailOrUsernameError(message: string | RegExp) {
-    await expect(this.emailOrUsernameError).toBeVisible();
-    await expect(this.emailOrUsernameError).toContainText(message);
+  async expectEmailError(message: string | RegExp) {
+    await expect(this.emailError).toBeVisible();
+    await expect(this.emailError).toContainText(message);
   }
 
   /**

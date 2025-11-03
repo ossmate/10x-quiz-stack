@@ -1,27 +1,32 @@
 import { type Page, type Locator } from "@playwright/test";
 
 /**
- * Page Object Model for the Home Page (Dashboard)
- * The homepage shows the public dashboard with quiz tabs
+ * Page Object Model for the Home Page (Public Landing Page)
+ * The homepage is a public marketing/landing page showing features and demo quizzes
  */
 export class HomePage {
   readonly page: Page;
-  readonly dashboardHeading: Locator;
-  readonly myQuizzesTab: Locator;
-  readonly publicQuizzesTab: Locator;
+  readonly heroHeading: Locator;
+  readonly getStartedButton: Locator;
   readonly loginButton: Locator;
   readonly registerButton: Locator;
+  readonly dashboardButton: Locator;
+  readonly featuresSection: Locator;
+  readonly demoQuizzesSection: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    // Dashboard shows "Dashboard" heading
-    this.dashboardHeading = page.getByRole("heading", { name: /dashboard/i });
-    // Dashboard tabs
-    this.myQuizzesTab = page.getByRole("tab", { name: /my quizzes/i });
-    this.publicQuizzesTab = page.getByRole("tab", { name: /public quizzes/i });
+    // Hero section heading
+    this.heroHeading = page.getByRole("heading", { name: /create.*share.*take.*interactive quizzes/i });
+    // CTA buttons (use .first() to avoid strict mode violation since "Go to Dashboard" appears twice)
+    this.getStartedButton = page.getByRole("link", { name: /get started free/i });
+    this.dashboardButton = page.getByRole("link", { name: /go to dashboard/i }).first();
     // Header navigation links (exact text matches from AuthButtons component)
     this.loginButton = page.getByRole("link", { name: "Login" });
     this.registerButton = page.getByRole("link", { name: "Register" });
+    // Page sections
+    this.featuresSection = page.getByRole("heading", { name: /everything you need/i });
+    this.demoQuizzesSection = page.getByRole("heading", { name: /try it out.*no sign up required/i });
   }
 
   async goto() {
