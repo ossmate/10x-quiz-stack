@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -11,13 +10,10 @@ export const prerender = false;
  * @returns 401 Unauthorized - No session found
  * @returns 500 Internal Server Error
  */
-export const GET: APIRoute = async ({ request, cookies }) => {
+export const GET: APIRoute = async ({ locals }) => {
   try {
-    // Create Supabase server instance
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get Supabase client from middleware (SSR-compatible for auth)
+    const supabase = locals.supabase;
 
     // Get current user
     const {

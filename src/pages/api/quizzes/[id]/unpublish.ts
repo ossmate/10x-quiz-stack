@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 
 import { quizService } from "../../../../lib/services/quiz.service.ts";
 import { uuidSchema } from "../../../../lib/validation/uuid.schema.ts";
-import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -18,7 +17,7 @@ export const prerender = false;
  * @returns 422 Unprocessable Entity - Quiz cannot be unpublished (wrong status)
  * @returns 500 Internal Server Error - Database or unexpected error
  */
-export const POST: APIRoute = async ({ params, cookies, request }) => {
+export const POST: APIRoute = async ({ params, locals }) => {
   try {
     // Step 1: Extract quiz ID from path parameters
     const quizId = params.id;
@@ -56,17 +55,15 @@ export const POST: APIRoute = async ({ params, cookies, request }) => {
       );
     }
 
-    // Step 3: Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Step 3: Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
-    // Step 4: Check authentication using SSR client
+    // Step 4: Check authentication
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    if (!session) {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
@@ -80,7 +77,7 @@ export const POST: APIRoute = async ({ params, cookies, request }) => {
         }
       );
     }
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Step 5: Unpublish quiz using the service (RLS will control access)
     let unpublishedQuiz;

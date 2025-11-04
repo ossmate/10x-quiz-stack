@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -18,7 +17,7 @@ const quizResponsesSchema = z.object({
  * POST /api/attempts/[attemptId]/responses
  * Submit quiz responses for an attempt
  */
-export const POST: APIRoute = async ({ params, request, cookies }) => {
+export const POST: APIRoute = async ({ params, request, locals }) => {
   try {
     const { attemptId } = params;
 
@@ -30,13 +29,10 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       });
     }
 
-    // Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
-    // Check authentication using SSR client
+    // Check authentication
     const {
       data: { user },
       error: userError,

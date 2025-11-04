@@ -3,7 +3,6 @@ import { aiQuizGeneratorService } from "../../../../lib/services/ai-quiz-generat
 import { AIQuotaService } from "../../../../lib/services/ai-quota.service.ts";
 import { aiQuizGenerationSchema } from "../../../../lib/validation/ai-quiz-generation.schema.ts";
 import type { AIGeneratedQuizPreview, QuizSource } from "../../../../types.ts";
-import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -23,20 +22,18 @@ export const prerender = false;
  * @returns 503 Service Unavailable - AI service error
  * @returns 500 Internal Server Error - Unexpected error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
     // Check for authentication
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
 
-    if (!session) {
+    if (userError || !user) {
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
@@ -51,7 +48,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Step 2: Check quota before generation
     const quotaService = new AIQuotaService();

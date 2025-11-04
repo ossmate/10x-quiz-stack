@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { changePasswordSchema } from "../../../lib/validation/auth.schema.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -14,7 +13,7 @@ export const prerender = false;
  * @returns 401 Unauthorized - User not authenticated or invalid current password
  * @returns 500 Internal Server Error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Parse request body
     const body = await request.json();
@@ -45,11 +44,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { currentPassword, newPassword } = validationResult.data;
 
-    // Create Supabase server instance
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get Supabase client from middleware (SSR-compatible for auth)
+    const supabase = locals.supabase;
 
     // Get current user
     const {

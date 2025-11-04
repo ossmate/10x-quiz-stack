@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { passwordSchema } from "../../../lib/validation/auth.schema.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -26,7 +25,7 @@ const resetPasswordBodySchema = z
  * @returns 401 Unauthorized - No valid recovery session
  * @returns 500 Internal Server Error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Parse request body
     const body = await request.json();
@@ -57,11 +56,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { password } = validationResult.data;
 
-    // Create Supabase server instance
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get Supabase client from middleware (SSR-compatible for auth)
+    const supabase = locals.supabase;
 
     // Verify that user has a valid password reset session
     // The session should have been established when the user clicked the reset link

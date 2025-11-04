@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -8,7 +7,7 @@ export const prerender = false;
  * GET /api/attempts/[attemptId]
  * Fetch detailed attempt data including user answers for results page
  */
-export const GET: APIRoute = async ({ params, request, cookies }) => {
+export const GET: APIRoute = async ({ params, locals }) => {
   const { attemptId } = params;
 
   // eslint-disable-next-line no-console
@@ -24,11 +23,8 @@ export const GET: APIRoute = async ({ params, request, cookies }) => {
     });
   }
 
-  // Create Supabase client with session
-  const supabaseClient = createSupabaseServerInstance({
-    cookies,
-    headers: request.headers,
-  });
+  // Get supabase client from middleware (RLS enforced)
+  const supabaseClient = locals.supabase;
 
   // Check authentication
   const {

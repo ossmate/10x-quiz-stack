@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { AIQuotaService } from "../../../lib/services/ai-quota.service.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -12,20 +11,18 @@ export const prerender = false;
  * @returns 401 Unauthorized - Authentication required
  * @returns 500 Internal Server Error - Unexpected error
  */
-export const GET: APIRoute = async ({ cookies, request }) => {
+export const GET: APIRoute = async ({ locals }) => {
   try {
-    // Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
     // Check for authentication
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
 
-    if (!session) {
+    if (userError || !user) {
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
@@ -40,7 +37,7 @@ export const GET: APIRoute = async ({ cookies, request }) => {
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Fetch user's quota information
     const quotaService = new AIQuotaService();

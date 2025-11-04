@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { QuizAttemptDTO } from "@/types";
 import type { QuizAttemptsListResponse } from "@/types/quiz-attempts.types";
-import { createSupabaseServerInstance } from "../../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -10,7 +9,7 @@ export const prerender = false;
  * GET /api/quizzes/[id]/attempts
  * Fetch all completed attempts for the authenticated user for a specific quiz
  */
-export const GET: APIRoute = async ({ params, request, cookies }) => {
+export const GET: APIRoute = async ({ params, locals }) => {
   const quizId = params.id;
 
   if (!quizId) {
@@ -20,11 +19,8 @@ export const GET: APIRoute = async ({ params, request, cookies }) => {
     });
   }
 
-  // Create Supabase client with session
-  const supabaseClient = createSupabaseServerInstance({
-    cookies,
-    headers: request.headers,
-  });
+  // Get supabase client from middleware (RLS enforced)
+  const supabaseClient = locals.supabase;
 
   // Check authentication
   const {
@@ -140,7 +136,7 @@ export const GET: APIRoute = async ({ params, request, cookies }) => {
  * POST /api/quizzes/[id]/attempts
  * Create a new quiz attempt
  */
-export const POST: APIRoute = async ({ params, request, cookies }) => {
+export const POST: APIRoute = async ({ params, locals }) => {
   try {
     const quizId = params.id;
 
@@ -160,13 +156,10 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       });
     }
 
-    // Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
-    // Check authentication using SSR client
+    // Check authentication
     const {
       data: { user },
       error: userError,

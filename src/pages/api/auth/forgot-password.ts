@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { forgotPasswordSchema } from "../../../lib/validation/auth.schema.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -13,7 +12,7 @@ export const prerender = false;
  * @returns 400 Bad Request - Validation error
  * @returns 500 Internal Server Error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Parse request body
     const body = await request.json();
@@ -44,11 +43,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { email } = validationResult.data;
 
-    // Create Supabase server instance
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get Supabase client from middleware (SSR-compatible for auth)
+    const supabase = locals.supabase;
 
     // Send password reset email
     // Note: This will send an email if the user exists, but we always return success
