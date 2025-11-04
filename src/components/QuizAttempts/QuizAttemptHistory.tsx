@@ -32,7 +32,7 @@ export function QuizAttemptHistory({ quizId, userId }: QuizAttemptHistoryProps) 
   // Loading state
   if (isLoading) {
     return (
-      <section className="mt-8 border-t pt-8">
+      <section className="mt-8">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="ml-3 text-muted-foreground">Loading your scoreboard...</span>
@@ -44,7 +44,7 @@ export function QuizAttemptHistory({ quizId, userId }: QuizAttemptHistoryProps) 
   // Error state
   if (error) {
     return (
-      <section className="mt-8 border-t pt-8">
+      <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Your Scoreboard</h2>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -63,7 +63,7 @@ export function QuizAttemptHistory({ quizId, userId }: QuizAttemptHistoryProps) 
   // Empty state
   if (attempts.length === 0) {
     return (
-      <section className="mt-8 border-t pt-8">
+      <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Your Scoreboard</h2>
         <EmptyState quizId={quizId} />
       </section>
@@ -85,7 +85,7 @@ export function QuizAttemptHistory({ quizId, userId }: QuizAttemptHistoryProps) 
   };
 
   return (
-    <section className="mt-8 border-t pt-8">
+    <section className="mt-8">
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

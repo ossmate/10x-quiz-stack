@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
 import type { QuizDetailDTO } from "../../types";
-import { PublishQuizButton } from "./PublishQuizButton";
-import { UnpublishQuizButton } from "./UnpublishQuizButton";
+import { QuizActionItems } from "./QuizActionItems";
 
 interface QuizActionsProps {
   quiz: QuizDetailDTO;
@@ -16,6 +14,7 @@ interface QuizActionsProps {
 /**
  * Action button group for quiz detail view
  * Shows appropriate buttons based on quiz status and user ownership
+ * Now a thin wrapper around QuizActionItems for backwards compatibility
  */
 export function QuizActions({
   quiz,
@@ -26,43 +25,16 @@ export function QuizActions({
   onPublish,
   onUnpublish,
 }: QuizActionsProps) {
-  const isPublished = quiz.status === "public" || quiz.status === "private";
-  const isDraft = quiz.status === "draft";
-
   return (
-    <div className="flex flex-wrap gap-3">
-      {/* Start Quiz Button - Available to all users */}
-      <Button onClick={onStartQuiz} variant="default" size="default" aria-label="Start taking this quiz">
-        Start Quiz
-      </Button>
-
-      {/* Owner-only actions */}
-      {isOwner && (
-        <>
-          {/* Publish Button - Only for draft quizzes */}
-          {isDraft && <PublishQuizButton quiz={quiz} onPublish={onPublish} />}
-
-          {/* Unpublish Button - Only for published quizzes */}
-          {isPublished && <UnpublishQuizButton quiz={quiz} onUnpublish={onUnpublish} />}
-
-          {/* Edit Button - Only enabled for draft quizzes */}
-          <Button
-            onClick={onEdit}
-            variant="outline"
-            size="default"
-            disabled={isPublished}
-            aria-label={isPublished ? "Unpublish quiz to edit" : "Edit this quiz"}
-            title={isPublished ? "You must unpublish the quiz before editing" : "Edit this quiz"}
-          >
-            Edit Quiz
-          </Button>
-
-          {/* Delete Button - Always available to owner */}
-          <Button onClick={onDelete} variant="destructive" size="default" aria-label="Delete this quiz">
-            Delete Quiz
-          </Button>
-        </>
-      )}
-    </div>
+    <QuizActionItems
+      quiz={quiz}
+      isOwner={isOwner}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onStartQuiz={onStartQuiz}
+      onPublish={onPublish}
+      onUnpublish={onUnpublish}
+      variant="button"
+    />
   );
 }
