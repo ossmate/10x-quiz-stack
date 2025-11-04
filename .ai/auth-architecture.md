@@ -14,6 +14,8 @@
 
 This document defines the complete architecture for user authentication, including registration, login, and password recovery functionality for QuizStack. The implementation leverages Supabase Auth for secure authentication flows while maintaining compatibility with the existing application structure.
 
+> **🔒 SECURITY NOTE**: This application enforces Row-Level Security (RLS) on ALL HTTP routes. No service-role key bypass is used in route handlers. All database queries go through RLS policies to ensure proper authorization. See [RLS-ENFORCEMENT-REFACTOR.md](../RLS-ENFORCEMENT-REFACTOR.md) for details.
+
 **Key Technologies:**
 - **Frontend**: Astro 5 (pages), React 19 (interactive forms), TypeScript 5
 - **Backend**: Astro API Routes, Supabase Auth
@@ -623,7 +625,8 @@ export type ChangePasswordInput = z.infer&lt;typeof changePasswordSchema&gt;;
 ```
 
 **Implementation Notes**:
-- Use service role key to create profile (bypasses RLS)
+- Profile creation handled by database trigger or authenticated user context
+- RLS policies must allow profile creation for the authenticated user
 - Handle race conditions (concurrent registrations)
 - Log errors for monitoring
 
@@ -940,103 +943,93 @@ export type ChangePasswordInput = z.infer&lt;typeof changePasswordSchema&gt;;
 
 **File**: `/src/middleware/index.ts`
 
-**Current State**:
-- Commented authentication check
-- Service role client for API routes
+**Current State** (After RLS Enforcement Refactor):
+- ✅ **All routes enforce RLS** - No service-role key bypass
+- ✅ **SSR-compatible client** for proper session handling
+- ✅ **Database-level security** always enforced
 
-**Required Updates**:
+**Implementation**:
 
 ```typescript
 import { defineMiddleware } from "astro:middleware";
-import { createClient } from "@supabase/supabase-js";
-import { supabaseClient } from "../db/supabase.client.ts";
-import type { Database } from "../db/database.types.ts";
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
 
 /**
  * Routes that require authentication
  */
 const PROTECTED_ROUTES = [
+  "/dashboard",
   "/quizzes/new",
   "/quizzes/ai/generate",
-  "/quizzes/*/edit", // Pattern for edit pages
+  "/quizzes/*/edit",
   "/auth/change-password",
 ];
 
-/**
- * Routes that should redirect to home if already authenticated
- */
-const AUTH_ROUTES = [
-  "/auth/login",
-  "/auth/register",
-];
-
 export const onRequest = defineMiddleware(async (context, next) => {
-  // For API routes, use service role key to bypass RLS
-  if (context.url.pathname.startsWith("/api/")) {
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+  const { url, cookies, request, redirect, locals } = context;
 
-    if (serviceRoleKey) {
-      context.locals.supabase = createClient&lt;Database&gt;(
-        import.meta.env.SUPABASE_URL,
-        serviceRoleKey,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        }
-      );
-    } else {
-      context.locals.supabase = supabaseClient;
-    }
+  // For all routes, use SSR-compatible client (RLS enforced)
+  const supabase = createSupabaseServerInstance({
+    cookies,
+    headers: request.headers,
+  });
 
-    return next();
+  locals.supabase = supabase;
+
+  // Get current user session
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Store user in locals for easy access
+  if (user) {
+    // Fetch username from profiles table
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+
+    locals.user = {
+      id: user.id,
+      email: user.email || "",
+      username: profile?.username || user.email?.split("@")[0] || "User",
+    };
   }
 
-  // For page routes, use regular client
-  context.locals.supabase = supabaseClient;
+  // Check if this is a demo quiz route - these are public
+  const isDemoQuizRoute = /^\/quizzes\/demo-[^/]+\/take$/.test(url.pathname);
 
-  // Get current session
-  const {
-    data: { session },
-  } = await context.locals.supabase.auth.getSession();
-
-  // Check if route requires authentication
+  // Check if route is protected
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => {
     if (route.includes("*")) {
       const pattern = new RegExp(`^${route.replace("*", ".*")}$`);
-      return pattern.test(context.url.pathname);
+      return pattern.test(url.pathname);
     }
-    return context.url.pathname.startsWith(route);
+    return url.pathname.startsWith(route);
   });
 
-  // Check if route is auth page
-  const isAuthRoute = AUTH_ROUTES.some((route) =>
-    context.url.pathname.startsWith(route)
-  );
-
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !session) {
-    const redirectUrl = `/auth/login?redirect=${encodeURIComponent(context.url.pathname)}`;
-    return Response.redirect(new URL(redirectUrl, context.url.origin));
+  // Redirect unauthenticated users from protected routes (except demo quiz routes)
+  if (isProtectedRoute && !user && !isDemoQuizRoute) {
+    const redirectUrl = `/auth/login?redirect=${encodeURIComponent(url.pathname)}`;
+    return redirect(redirectUrl);
   }
 
-  // Redirect authenticated users from auth pages
-  if (isAuthRoute && session) {
-    return Response.redirect(new URL("/", context.url.origin));
-  }
-
-  // Store user in context for easy access
-  if (session) {
-    context.locals.user = {
-      id: session.user.id,
-      email: session.user.email!,
-    };
+  // Redirect authenticated users from auth pages to dashboard
+  const isAuthPage = url.pathname === "/auth/login" || url.pathname === "/auth/register";
+  if (isAuthPage && user) {
+    return redirect("/dashboard");
   }
 
   return next();
 });
 ```
+
+**Key Security Changes**:
+- ❌ **REMOVED**: Service-role key bypass for API routes
+- ✅ **ADDED**: RLS enforcement on ALL HTTP routes
+- ✅ **ADDED**: SSR-compatible client for proper authentication
+- ⚠️ **REQUIRED**: RLS policies must be properly configured on all tables
 
 **Type Definitions Update** (`/src/env.d.ts`):
 ```typescript
@@ -1120,7 +1113,8 @@ export class AuthService {
       throw new Error("Registration failed");
     }
 
-    // Create profile (using service role key to bypass RLS)
+    // Create profile - RLS policy allows INSERT for authenticated user
+    // Note: This requires an RLS policy that allows users to create their own profile
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       username: input.username,
@@ -1352,6 +1346,9 @@ CREATE TABLE profiles (
 **Profiles Table Policies**:
 
 ```sql
+-- Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
 -- Users can read their own profile
 CREATE POLICY "Users can read own profile"
 ON profiles
@@ -1364,11 +1361,14 @@ ON profiles
 FOR UPDATE
 USING (auth.uid() = id);
 
--- Service role can insert profiles (for registration)
-CREATE POLICY "Service role can insert profiles"
+-- Users can insert their own profile during registration
+CREATE POLICY "Users can insert own profile"
 ON profiles
 FOR INSERT
-WITH CHECK (true); -- Only service role can bypass this
+WITH CHECK (auth.uid() = id);
+
+-- Note: Profile creation happens during user registration
+-- The policy allows a user to create a profile record with their own auth.uid()
 ```
 
 **Quizzes Table Policies** (Update required):
@@ -1409,6 +1409,8 @@ EXECUTE FUNCTION update_updated_at_column();
 ---
 
 ## Security Considerations
+
+> **🔒 RLS ENFORCEMENT**: All HTTP routes in this application enforce Row-Level Security (RLS) policies. Service-role keys are NEVER used in route handlers. This ensures database-level security is always active. For implementation details, see [RLS-ENFORCEMENT-REFACTOR.md](../RLS-ENFORCEMENT-REFACTOR.md).
 
 ### 1. Password Security
 
@@ -1651,13 +1653,11 @@ const currentUserId = Astro.locals.user?.id || null;
 #### ✅ Correct Pattern for API Endpoints:
 ```typescript
 // In API routes (e.g., /pages/api/quizzes/[id]/attempts.ts)
-import { createSupabaseServerInstance } from "path/to/db/supabase.client.ts";
+// Use locals.supabase from middleware (RLS enforced)
 
-export const POST: APIRoute = async ({ params, request, cookies }) => {
-  const supabaseClient = createSupabaseServerInstance({
-    cookies,
-    headers: request.headers,
-  });
+export const POST: APIRoute = async ({ params, locals }) => {
+  // Get supabase client from middleware (RLS enforced)
+  const supabaseClient = locals.supabase;
 
   const {
     data: { session },
@@ -1674,6 +1674,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   // Use currentUserId for authorization checks...
 }
 ```
+
+**IMPORTANT**: Never use `createSupabaseServerInstance` directly in API routes. Always use `locals.supabase` which is provided by middleware and enforces RLS.
 
 #### ❌ NEVER Use Environment Variables for User ID:
 ```typescript

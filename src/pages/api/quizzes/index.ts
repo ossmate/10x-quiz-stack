@@ -3,7 +3,6 @@ import type { APIRoute } from "astro";
 import { quizService } from "../../../lib/services/quiz.service.ts";
 import { quizCreateSchema } from "../../../lib/validation/quiz-create.schema.ts";
 import { quizListQuerySchema } from "../../../lib/validation/quiz-list-query.schema.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -16,19 +15,17 @@ export const prerender = false;
  * @returns 401 Unauthorized - Authentication required
  * @returns 500 Internal Server Error - Database or unexpected error
  */
-export const GET: APIRoute = async ({ url, cookies, request }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
-    // Step 1: Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Step 1: Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
-    // Step 2: Check authentication using SSR client
+    // Step 2: Check authentication
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    if (!session) {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
@@ -42,7 +39,7 @@ export const GET: APIRoute = async ({ url, cookies, request }) => {
         }
       );
     }
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Step 3: Parse and validate query parameters
     // Note: Convert null to undefined for optional fields
@@ -147,19 +144,17 @@ export const GET: APIRoute = async ({ url, cookies, request }) => {
  * @returns 401 Unauthorized - Authentication required
  * @returns 500 Internal Server Error - Database or unexpected error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Step 1: Create SSR-compatible client for authentication
-    const supabaseClient = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Step 1: Get supabase client from middleware (RLS enforced)
+    const supabaseClient = locals.supabase;
 
-    // Step 2: Check authentication using SSR client
+    // Step 2: Check authentication
     const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    if (!session) {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
@@ -173,7 +168,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       );
     }
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Step 3: Parse and validate request body
     let body;

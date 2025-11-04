@@ -1,9 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import { defineMiddleware } from "astro:middleware";
 
-import { createSupabaseServerInstance, supabaseClient } from "../db/supabase.client.ts";
-
-import type { Database } from "../db/database.types.ts";
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
 
 /**
  * Protected routes - require authentication
@@ -20,27 +17,7 @@ const PROTECTED_ROUTES = [
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url, cookies, request, redirect, locals } = context;
 
-  // For API routes (non-auth), use service role key to bypass RLS
-  if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) {
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (serviceRoleKey) {
-      // Use service role client (bypasses RLS)
-      locals.supabase = createClient<Database>(import.meta.env.SUPABASE_URL, serviceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      });
-    } else {
-      // Fallback to regular client (RLS will apply)
-      locals.supabase = supabaseClient;
-    }
-
-    return next();
-  }
-
-  // For auth routes and pages, use SSR-compatible client
+  // For all routes, use SSR-compatible client (RLS enforced)
   const supabase = createSupabaseServerInstance({
     cookies,
     headers: request.headers,

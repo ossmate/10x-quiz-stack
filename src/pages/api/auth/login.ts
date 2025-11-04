@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { loginSchema } from "../../../lib/validation/auth.schema.ts";
-import { createSupabaseServerInstance } from "../../../db/supabase.client.ts";
 
 export const prerender = false;
 
@@ -15,7 +14,7 @@ export const prerender = false;
  * @returns 403 Forbidden - Email not verified
  * @returns 500 Internal Server Error
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Parse request body
     const body = await request.json();
@@ -46,11 +45,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { email, password } = validationResult.data;
 
-    // Create Supabase server instance for authentication
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
+    // Get Supabase client from middleware (SSR-compatible for auth)
+    const supabase = locals.supabase;
 
     // Sign in with email and password
     const { data, error } = await supabase.auth.signInWithPassword({
