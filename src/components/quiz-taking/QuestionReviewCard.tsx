@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuestionWithOptionsDTO } from "../../types";
 
@@ -12,7 +15,7 @@ interface QuestionReviewCardProps {
 
 /**
  * Displays a single question review card
- * Shows question, user's answer, correct answer, and explanation
+ * Shows question, user's answer, correct answer, and toggleable explanation
  */
 export function QuestionReviewCard({
   question,
@@ -20,6 +23,9 @@ export function QuestionReviewCard({
   userSelectedOptionIds,
   isCorrect,
 }: QuestionReviewCardProps) {
+  const [showExplanation, setShowExplanation] = useState(false);
+  const hasExplanation = question.explanation && question.explanation.trim() !== "";
+
   return (
     <Card className="p-6">
       <div className="flex items-start justify-between gap-4 mb-4">
@@ -99,11 +105,35 @@ export function QuestionReviewCard({
           })}
       </div>
 
-      {/* Explanation */}
-      {question.explanation && (
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm font-semibold mb-1 text-blue-900 dark:text-blue-100">Explanation:</p>
-          <p className="text-sm text-blue-800 dark:text-blue-200">{question.explanation}</p>
+      {/* Explanation Toggle and Content */}
+      {hasExplanation && (
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExplanation(!showExplanation)}
+            aria-label={showExplanation ? "Hide explanation" : "Show explanation"}
+            aria-expanded={showExplanation}
+          >
+            {showExplanation ? (
+              <>
+                <X className="mr-2 h-4 w-4" />
+                Hide Explanation
+              </>
+            ) : (
+              <>
+                <Info className="mr-2 h-4 w-4" />
+                Show Explanation
+              </>
+            )}
+          </Button>
+
+          {showExplanation && (
+            <div className="mt-3 p-4 bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm font-semibold mb-1 text-blue-900 dark:text-blue-100">Explanation:</p>
+              <p className="text-sm text-blue-800 dark:text-blue-200">{question.explanation}</p>
+            </div>
+          )}
         </div>
       )}
     </Card>
