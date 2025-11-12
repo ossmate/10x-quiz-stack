@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { QuestionWithOptionsDTO } from "../../types.ts";
 import { AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Info, X } from "lucide-react";
 import { OptionsList } from "./OptionsList.tsx";
 
 interface QuestionCardProps {
@@ -13,11 +13,12 @@ interface QuestionCardProps {
 
 /**
  * Displays a single question in an accordion format
- * Supports per-question answer visibility toggle for owners
- * Each question manages its own showCorrectAnswers state independently
+ * Supports per-question answer and explanation visibility toggles
+ * Each question manages its own state independently
  */
 export function QuestionCard({ question, questionNumber, isOwner }: QuestionCardProps) {
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
   const hasExplanation =
     question.explanation !== undefined && question.explanation !== null && question.explanation.trim() !== "";
 
@@ -49,9 +50,9 @@ export function QuestionCard({ question, questionNumber, isOwner }: QuestionCard
       </AccordionTrigger>
 
       <AccordionContent className="px-6 py-4 bg-muted/30">
-        {/* Toggle Button for Answer Visibility (Owner Only) */}
+        {/* Toggle Buttons (Owner Only) */}
         {isOwner && (
-          <div className="answer-toggle-container mb-4">
+          <div className="flex gap-2 mb-4">
             <Button
               variant="outline"
               size="sm"
@@ -70,14 +71,35 @@ export function QuestionCard({ question, questionNumber, isOwner }: QuestionCard
                 </>
               )}
             </Button>
+
+            {hasExplanation && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowExplanation(!showExplanation)}
+                aria-label={showExplanation ? "Hide explanation" : "Show explanation"}
+              >
+                {showExplanation ? (
+                  <>
+                    <X className="mr-2 h-4 w-4" />
+                    Hide Explanation
+                  </>
+                ) : (
+                  <>
+                    <Info className="mr-2 h-4 w-4" />
+                    Show Explanation
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         )}
 
         {/* Answer Options */}
         <OptionsList options={question.options} showCorrectAnswers={showCorrectAnswers} />
 
-        {/* Explanation Section */}
-        {hasExplanation && (
+        {/* Explanation Section (Toggleable) */}
+        {hasExplanation && showExplanation && (
           <div className="mt-6 pt-6 border-t border-border">
             <h4 className="text-sm font-semibold text-foreground mb-2">Explanation</h4>
             <p className="text-sm text-muted-foreground">{question.explanation}</p>

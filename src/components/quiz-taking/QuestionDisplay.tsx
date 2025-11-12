@@ -11,8 +11,9 @@ interface QuestionDisplayProps {
 }
 
 /**
- * Displays a single question with its options
+ * Displays a single question with its options during quiz-taking
  * Shows question number badge, content, and selectable options
+ * Explanations are NOT shown during quiz-taking (only in results)
  */
 export function QuestionDisplay({
   question,
@@ -34,14 +35,6 @@ export function QuestionDisplay({
         onSelectOption={onSelectOption}
         disabled={disabled}
       />
-
-      {question.explanation && (
-        <div className="mt-4 p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold">Hint:</span> {question.explanation}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

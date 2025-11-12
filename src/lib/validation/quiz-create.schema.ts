@@ -28,9 +28,9 @@ export const quizCreateSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
   description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
   source: z.enum(["manual", "ai_generated"]).default("manual"),
-  ai_model: z.string().optional(),
-  ai_prompt: z.string().optional(),
-  ai_temperature: z.number().min(0).max(2).optional(),
+  ai_model: z.string().nullable().optional(),
+  ai_prompt: z.string().nullable().optional(),
+  ai_temperature: z.number().min(0).max(2).nullable().optional(),
   questions: z
     .array(questionSchema)
     .min(1, "Quiz must have at least one question")

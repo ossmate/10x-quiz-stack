@@ -69,6 +69,7 @@ export class QuizService {
         .insert({
           quiz_id: quizData.id,
           content: question.content,
+          explanation: question.explanation || null,
           order_index: i,
         })
         .select()
@@ -88,9 +89,7 @@ export class QuizService {
           is_correct: option.is_correct,
           order_index: j,
           generated_by_ai: true,
-          ai_generation_metadata: {
-            explanation: question.explanation,
-          } as never,
+          ai_generation_metadata: null,
         });
 
         if (answerError) {
@@ -225,6 +224,7 @@ export class QuizService {
           .insert({
             quiz_id: quiz.id,
             content: questionData.content,
+            explanation: questionData.explanation || null,
             order_index: questionData.position - 1,
           })
           .select()
@@ -248,10 +248,7 @@ export class QuizService {
               is_correct: optionData.is_correct,
               order_index: optionData.position - 1,
               generated_by_ai: quizData.source === "ai_generated",
-              ai_generation_metadata:
-                quizData.source === "ai_generated" && questionData.explanation
-                  ? ({ explanation: questionData.explanation } as never)
-                  : null,
+              ai_generation_metadata: null,
             })
             .select()
             .single();
@@ -411,16 +408,11 @@ export class QuizService {
           return null;
         }
 
-        const explanation =
-          question.ai_generation_metadata && typeof question.ai_generation_metadata === "object"
-            ? question.ai_generation_metadata.explanation || undefined
-            : undefined;
-
         return {
           id: question.id,
           quiz_id: question.quiz_id,
           content: question.content,
-          explanation,
+          explanation: question.explanation || undefined,
           position: question.order_index + 1,
           status: "active" as const,
           created_at: question.created_at,
@@ -709,6 +701,7 @@ export class QuizService {
           .insert({
             quiz_id: quizId,
             content: questionData.content,
+            explanation: questionData.explanation || null,
             order_index: questionData.position - 1,
           })
           .select()
@@ -730,10 +723,7 @@ export class QuizService {
               is_correct: optionData.is_correct,
               order_index: optionData.position - 1,
               generated_by_ai: quizData.source === "ai_generated",
-              ai_generation_metadata:
-                quizData.source === "ai_generated" && questionData.explanation
-                  ? ({ explanation: questionData.explanation } as never)
-                  : null,
+              ai_generation_metadata: null,
             })
             .select()
             .single();
