@@ -93,4 +93,3 @@ npm run build
 - [GitHub Secrets Documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Playwright CI Configuration](https://playwright.dev/docs/ci)
 - [Vercel CLI Documentation](https://vercel.com/docs/cli)
-
