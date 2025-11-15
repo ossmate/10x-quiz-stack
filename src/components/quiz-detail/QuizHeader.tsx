@@ -1,11 +1,7 @@
 import type { QuizDTO } from "../../types.ts";
 import { QuizMetadata } from "./QuizMetadata.tsx";
 import { QuizActionItems } from "./QuizActionItems.tsx";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

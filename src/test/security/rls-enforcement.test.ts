@@ -30,14 +30,11 @@ describe("RLS Enforcement", () => {
         } else if (file.endsWith(".ts")) {
           const content = readFileSync(fullPath, "utf-8");
 
-          expect(
-            content,
-            `File ${fullPath} should not contain SUPABASE_SERVICE_ROLE_KEY`
-          ).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
-
-          expect(content, `File ${fullPath} should not contain serviceRoleKey`).not.toContain(
-            "serviceRoleKey"
+          expect(content, `File ${fullPath} should not contain SUPABASE_SERVICE_ROLE_KEY`).not.toContain(
+            "SUPABASE_SERVICE_ROLE_KEY"
           );
+
+          expect(content, `File ${fullPath} should not contain serviceRoleKey`).not.toContain("serviceRoleKey");
         }
       }
     }
@@ -97,9 +94,7 @@ describe("RLS Enforcement", () => {
           const content = readFileSync(fullPath, "utf-8");
 
           // Check if file defines API route handlers
-          const hasApiRoute = /export\s+const\s+(GET|POST|PUT|DELETE|PATCH):\s*APIRoute/.test(
-            content
-          );
+          const hasApiRoute = /export\s+const\s+(GET|POST|PUT|DELETE|PATCH):\s*APIRoute/.test(content);
 
           if (hasApiRoute) {
             routesChecked.push(fullPath);
@@ -118,10 +113,7 @@ describe("RLS Enforcement", () => {
     checkDirectory(apiRoutesPath);
 
     // Ensure we found some routes to check
-    expect(
-      routesChecked.length,
-      "Should have found API routes to check"
-    ).toBeGreaterThan(0);
+    expect(routesChecked.length, "Should have found API routes to check").toBeGreaterThan(0);
 
     // All routes should use locals.supabase
     expect(
@@ -130,4 +122,3 @@ describe("RLS Enforcement", () => {
     ).toHaveLength(0);
   });
 });
-

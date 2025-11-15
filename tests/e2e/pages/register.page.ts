@@ -114,7 +114,6 @@ export class RegisterPage {
     await expect(this.emailError).toContainText(message);
   }
 
-
   /**
    * Verify password field error
    */

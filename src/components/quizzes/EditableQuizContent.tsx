@@ -205,30 +205,32 @@ export function EditableQuizContent({
   const sanitizeQuizForSave = (quiz: EditableQuizData): EditableQuizData => {
     return {
       ...quiz,
-      questions: quiz.questions
-        ?.filter((question) => {
-          const content = question.content?.trim() || "";
-          // Filter out empty questions and placeholder text
-          return content.length > 0 && content !== "New question";
-        })
-        .map((question) => ({
-          ...question,
-          // Filter out empty options and placeholder text
-          options: question.options
-            ?.filter((option) => {
-              const content = option.content?.trim() || "";
-              // Filter out empty options and placeholders like "Option 1", "Option 2", "New option"
-              return content.length > 0 && !/^(Option \d+|New option)$/i.test(content);
-            })
-            .map((option, index) => ({
-              ...option,
-              position: index + 1, // Reindex positions after filtering
-            })) || [],
-        }))
-        .map((question, index) => ({
-          ...question,
-          position: index + 1, // Reindex question positions
-        })) || [],
+      questions:
+        quiz.questions
+          ?.filter((question) => {
+            const content = question.content?.trim() || "";
+            // Filter out empty questions and placeholder text
+            return content.length > 0 && content !== "New question";
+          })
+          .map((question) => ({
+            ...question,
+            // Filter out empty options and placeholder text
+            options:
+              question.options
+                ?.filter((option) => {
+                  const content = option.content?.trim() || "";
+                  // Filter out empty options and placeholders like "Option 1", "Option 2", "New option"
+                  return content.length > 0 && !/^(Option \d+|New option)$/i.test(content);
+                })
+                .map((option, index) => ({
+                  ...option,
+                  position: index + 1, // Reindex positions after filtering
+                })) || [],
+          }))
+          .map((question, index) => ({
+            ...question,
+            position: index + 1, // Reindex question positions
+          })) || [],
     };
   };
 
@@ -244,9 +246,7 @@ export function EditableQuizContent({
     }
 
     // Double-check: ensure we have at least one non-empty question before sanitizing
-    const hasValidQuestions = editableQuiz.questions?.some(
-      (q) => q.content && q.content.trim().length > 0
-    );
+    const hasValidQuestions = editableQuiz.questions?.some((q) => q.content && q.content.trim().length > 0);
 
     if (!hasValidQuestions) {
       console.error("Cannot save: No valid questions found");
@@ -263,9 +263,7 @@ export function EditableQuizContent({
     }
 
     // Check each question has at least 2 options after sanitization
-    const hasInvalidQuestion = sanitizedQuiz.questions.some(
-      (q) => !q.options || q.options.length < 2
-    );
+    const hasInvalidQuestion = sanitizedQuiz.questions.some((q) => !q.options || q.options.length < 2);
 
     if (hasInvalidQuestion) {
       console.error("Cannot save: Question has less than 2 valid options after sanitization");
@@ -547,152 +545,157 @@ export function EditableQuizContent({
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                           Remove
                         </button>
                       </div>
 
-                    {/* Question Content */}
-                    <div className="mb-4">
-                      <label
-                        htmlFor={`question-content-${question.id}`}
-                        className="block text-sm font-medium text-foreground mb-2"
-                      >
-                        Question Text
-                      </label>
-                      <textarea
-                        id={`question-content-${question.id}`}
-                        className={`block w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-base resize-none ${
-                          questionErrors?.content
-                            ? "border-destructive focus:border-destructive focus:ring-destructive/20"
-                            : ""
-                        } ${isPublishing ? "opacity-60 cursor-not-allowed" : ""}`}
-                        value={question.content}
-                        onChange={(e) => updateQuestion(question.id, "content", e.target.value)}
-                        rows={3}
-                        disabled={isPublishing}
-                        placeholder="Enter your question here..."
-                      />
-                      {questionErrors?.content && (
-                        <p className="mt-1 text-sm text-destructive">{questionErrors.content}</p>
-                      )}
-                    </div>
+                      {/* Question Content */}
+                      <div className="mb-4">
+                        <label
+                          htmlFor={`question-content-${question.id}`}
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          Question Text
+                        </label>
+                        <textarea
+                          id={`question-content-${question.id}`}
+                          className={`block w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-base resize-none ${
+                            questionErrors?.content
+                              ? "border-destructive focus:border-destructive focus:ring-destructive/20"
+                              : ""
+                          } ${isPublishing ? "opacity-60 cursor-not-allowed" : ""}`}
+                          value={question.content}
+                          onChange={(e) => updateQuestion(question.id, "content", e.target.value)}
+                          rows={3}
+                          disabled={isPublishing}
+                          placeholder="Enter your question here..."
+                        />
+                        {questionErrors?.content && (
+                          <p className="mt-1 text-sm text-destructive">{questionErrors.content}</p>
+                        )}
+                      </div>
 
-                    {/* Question Options */}
-                    <div className="space-y-3 mb-5">
-                      <div className="block text-sm font-medium text-foreground mb-3">Answer Options</div>
+                      {/* Question Options */}
+                      <div className="space-y-3 mb-5">
+                        <div className="block text-sm font-medium text-foreground mb-3">Answer Options</div>
 
-                      {question.options &&
-                        question.options.map((option, optionIndex) => {
-                          const optionError = questionErrors?.options?.[option.id];
+                        {question.options &&
+                          question.options.map((option, optionIndex) => {
+                            const optionError = questionErrors?.options?.[option.id];
 
-                          return (
-                            <div
-                              key={option.id}
-                              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50 hover:bg-background transition-colors"
-                            >
-                              <div className="flex items-center pt-2.5">
-                                <input
-                                  type="radio"
-                                  name={`question-${question.id}-correct`}
-                                  checked={option.is_correct}
-                                  onChange={() => {
-                                    // Update correct answer (set all others to false)
-                                    question.options?.forEach((o) => {
-                                      updateOption(question.id, o.id, "is_correct", o.id === option.id);
-                                    });
-                                  }}
-                                  disabled={isPublishing}
-                                  className="h-4 w-4 border-input text-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
+                            return (
+                              <div
+                                key={option.id}
+                                className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50 hover:bg-background transition-colors"
+                              >
+                                <div className="flex items-center pt-2.5">
+                                  <input
+                                    type="radio"
+                                    name={`question-${question.id}-correct`}
+                                    checked={option.is_correct}
+                                    onChange={() => {
+                                      // Update correct answer (set all others to false)
+                                      question.options?.forEach((o) => {
+                                        updateOption(question.id, o.id, "is_correct", o.id === option.id);
+                                      });
+                                    }}
+                                    disabled={isPublishing}
+                                    className="h-4 w-4 border-input text-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
+                                </div>
+                                <div className="flex-grow">
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                                    Option {optionIndex + 1}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={option.content}
+                                    onChange={(e) => updateOption(question.id, option.id, "content", e.target.value)}
+                                    disabled={isPublishing}
+                                    placeholder="Enter answer option..."
+                                    className={`block w-full px-3 py-2 rounded-md border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-sm ${
+                                      optionError
+                                        ? "border-destructive focus:border-destructive focus:ring-destructive/20"
+                                        : ""
+                                    } ${isPublishing ? "opacity-60 cursor-not-allowed" : ""}`}
+                                  />
+                                  {optionError && <p className="mt-1.5 text-xs text-destructive">{optionError}</p>}
+                                </div>
+                                {question.options && question.options.length > 2 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeOption(question.id, option.id)}
+                                    disabled={isPublishing}
+                                    className="mt-6 p-2 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Remove option"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
                               </div>
-                              <div className="flex-grow">
-                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                                  Option {optionIndex + 1}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={option.content}
-                                  onChange={(e) => updateOption(question.id, option.id, "content", e.target.value)}
-                                  disabled={isPublishing}
-                                  placeholder="Enter answer option..."
-                                  className={`block w-full px-3 py-2 rounded-md border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-sm ${
-                                    optionError
-                                      ? "border-destructive focus:border-destructive focus:ring-destructive/20"
-                                      : ""
-                                  } ${isPublishing ? "opacity-60 cursor-not-allowed" : ""}`}
-                                />
-                                {optionError && <p className="mt-1.5 text-xs text-destructive">{optionError}</p>}
-                              </div>
-                              {question.options && question.options.length > 2 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeOption(question.id, option.id)}
-                                  disabled={isPublishing}
-                                  className="mt-6 p-2 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Remove option"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M6 18L18 6M6 6l12 12"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
 
-                      {/* Add Option Button */}
-                      <button
-                        type="button"
-                        onClick={() => addOption(question.id)}
-                        disabled={isPublishing}
-                        className="inline-flex items-center gap-2 px-3 py-2 border border-border shadow-sm text-sm font-medium rounded-lg text-foreground bg-background hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Option
-                      </button>
-                    </div>
+                        {/* Add Option Button */}
+                        <button
+                          type="button"
+                          onClick={() => addOption(question.id)}
+                          disabled={isPublishing}
+                          className="inline-flex items-center gap-2 px-3 py-2 border border-border shadow-sm text-sm font-medium rounded-lg text-foreground bg-background hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Option
+                        </button>
+                      </div>
 
-                    {/* Explanation Field */}
-                    <div>
-                      <label
-                        htmlFor={`explanation-${question.id}`}
-                        className="block text-sm font-medium text-foreground mb-2"
-                      >
-                        Explanation (Optional)
-                      </label>
-                      <textarea
-                        id={`explanation-${question.id}`}
-                        rows={3}
-                        className={`block w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-sm resize-none ${
-                          isPublishing ? "opacity-60 cursor-not-allowed" : ""
-                        }`}
-                        value={question.explanation || ""}
-                        onChange={(e) => updateQuestion(question.id, "explanation", e.target.value)}
-                        placeholder="Explain why the correct answer is correct (optional)..."
-                        disabled={isPublishing}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })
-          ) : (
-            <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
-              <p className="text-muted-foreground">
-                No questions yet. Click &ldquo;Add Question&rdquo; to create your first question.
-              </p>
-            </div>
-          )}
-        </Accordion>
+                      {/* Explanation Field */}
+                      <div>
+                        <label
+                          htmlFor={`explanation-${question.id}`}
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          Explanation (Optional)
+                        </label>
+                        <textarea
+                          id={`explanation-${question.id}`}
+                          rows={3}
+                          className={`block w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-sm resize-none ${
+                            isPublishing ? "opacity-60 cursor-not-allowed" : ""
+                          }`}
+                          value={question.explanation || ""}
+                          onChange={(e) => updateQuestion(question.id, "explanation", e.target.value)}
+                          placeholder="Explain why the correct answer is correct (optional)..."
+                          disabled={isPublishing}
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 border border-dashed border-border rounded-md bg-muted">
+                <p className="text-muted-foreground">
+                  No questions yet. Click &ldquo;Add Question&rdquo; to create your first question.
+                </p>
+              </div>
+            )}
+          </Accordion>
         </div>
 
         {/* Sentinel element to detect bottom of content */}
