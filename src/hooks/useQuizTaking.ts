@@ -46,8 +46,9 @@ const uuidSchema = z.string().uuid();
 export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn {
   const { quizId, currentUserId, isDemo = false } = params;
 
-  // Demo mode is when isDemo is true AND user is not authenticated
-  const isDemoMode = isDemo && !currentUserId;
+  // Demo mode is when isDemo is true (regardless of authentication status)
+  // Signed-in users can still take demo quizzes without creating attempts
+  const isDemoMode = isDemo;
 
   // Validate UUID format
   const validationResult = uuidSchema.safeParse(quizId);
@@ -292,7 +293,21 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
         throw new Error("Quiz data is missing");
       }
 
-      // Create new attempt
+      // For demo mode, just reset state without creating an attempt
+      if (isDemoMode) {
+        setTakingState((prev) => ({
+          phase: "taking",
+          quiz: prev.quiz,
+          attempt: null,
+          currentQuestionIndex: 0,
+          userAnswers: {},
+          score: null,
+          error: null,
+        }));
+        return;
+      }
+
+      // Create new attempt for regular quizzes
       const attemptResponse = await fetch(`/api/quizzes/${quizId}/attempts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -336,7 +351,7 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
       // eslint-disable-next-line no-console
       console.error("Error retrying quiz:", err);
     }
-  }, [quizId, takingState.quiz]);
+  }, [quizId, takingState.quiz, isDemoMode]);
 
   // Computed: Current question
   const currentQuestion = useMemo(() => {
@@ -450,7 +465,7 @@ export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn 
             description: demoQuiz.description,
             user_id: "demo",
             user_email: "demo@example.com",
-            status: "published",
+            status: "public",
             source: "manual",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
