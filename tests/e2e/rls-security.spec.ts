@@ -119,7 +119,7 @@ test.describe("RLS Security Enforcement", () => {
       // You can use: await setupAuthenticatedSession(page);
     });
 
-    test("should allow authenticated user to access quiz list", async ({ page }) => {
+    test("should allow authenticated user to access quiz list", async () => {
       // This test assumes user is authenticated
       // You would need to implement actual authentication in beforeEach
       // For now, this is a placeholder showing the test structure
@@ -130,7 +130,7 @@ test.describe("RLS Security Enforcement", () => {
       test.skip();
     });
 
-    test("should prevent user from accessing another user's private quiz", async ({ page }) => {
+    test("should prevent user from accessing another user's private quiz", async () => {
       // This test would verify that RLS prevents access to other users' private quizzes
       // Implementation would require:
       // 1. Two test users
@@ -140,30 +140,26 @@ test.describe("RLS Security Enforcement", () => {
       test.skip();
     });
 
-    test("should prevent user from updating another user's quiz", async ({ page }) => {
+    test("should prevent user from updating another user's quiz", async () => {
       // This test would verify that RLS prevents updating other users' quizzes
       // Similar to above, requires two test users
       test.skip();
     });
 
-    test("should prevent user from deleting another user's quiz", async ({ page }) => {
+    test("should prevent user from deleting another user's quiz", async () => {
       // This test would verify that RLS prevents deleting other users' quizzes
       test.skip();
     });
   });
 
   test.describe("Public Quiz Access", () => {
-    test("should allow anyone to view public quizzes without authentication", async ({
-      page,
-    }) => {
+    test("should allow anyone to view public quizzes without authentication", async () => {
       // Public quizzes should be accessible without auth
       // This would require setting up a public demo quiz
       test.skip();
     });
 
-    test("should allow anyone to take public quizzes without authentication", async ({
-      page,
-    }) => {
+    test("should allow anyone to take public quizzes without authentication", async () => {
       // Taking public quizzes should work without auth
       test.skip();
     });
