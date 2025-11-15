@@ -1,11 +1,18 @@
 # QuizStack
 
+[![CI/CD Pipeline](https://github.com/ossmate/10x-quiz-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/ossmate/10x-quiz-stack/actions/workflows/ci.yml)
+[![Deploy to Vercel](https://github.com/ossmate/10x-quiz-stack/actions/workflows/master.yml/badge.svg)](https://github.com/ossmate/10x-quiz-stack/actions/workflows/master.yml)
+
+> 🚀 **Live Demo**: The application is deployed on Vercel and accessible at your production URL.
+
 ## Table of Contents
 
 - [Project Description](#project-description)
 - [Tech Stack](#tech-stack)
 - [Getting Started Locally](#getting-started-locally)
 - [Available Scripts](#available-scripts)
+- [Testing](#testing)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Project Scope](#project-scope)
 - [Project Status](#project-status)
 - [License](#license)
@@ -50,16 +57,64 @@ Follow these steps to set up the project on your local machine:
 
 In the project directory, you can run:
 
-- **`npm run dev`**
-  Starts the development server.
+### Development
+- **`npm run dev`** - Starts the development server
+- **`npm run build`** - Builds the project for production
+- **`npm run preview`** - Serves the production build locally for preview
 
-- **`npm run build`**
-  Builds the project for production.
+### Testing
+- **`npm run test`** - Runs unit tests in watch mode
+- **`npm run test:run`** - Runs unit tests once
+- **`npm run test:coverage`** - Generates test coverage report
+- **`npm run test:e2e`** - Runs end-to-end tests with Playwright
+- **`npm run test:e2e:ui`** - Runs E2E tests with Playwright UI mode
 
-- **`npm run preview`**
-  Serves the production build locally for preview.
+### Code Quality
+- **`npm run lint`** - Runs ESLint
+- **`npm run lint:fix`** - Fixes ESLint issues automatically
+- **`npm run format`** - Formats code with Prettier
 
 Additional scripts may be available in the `package.json`.
+
+## Testing
+
+This project uses a comprehensive testing strategy:
+
+### Unit & Integration Tests (Vitest)
+- Tests for business logic and components
+- React Testing Library for component testing
+- Run with `npm run test:run`
+
+### End-to-End Tests (Playwright)
+- User journey testing from login to quiz completion
+- Tests authentication flows, CRUD operations, and AI generation
+- Run with `npm run test:e2e`
+- See [TESTING.md](./TESTING.md) for detailed testing guide
+
+### Test Coverage
+- Automated test coverage reports
+- Run with `npm run test:coverage`
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+### CI Workflow (`.github/workflows/ci.yml`)
+Runs on every push and pull request to `main`:
+- ✅ Unit tests with Vitest
+- ✅ E2E tests with Playwright
+- ✅ Production build
+- ✅ Security audit
+- ✅ Test coverage reports
+
+### Deployment Workflow (`.github/workflows/master.yml`)
+Automatically deploys to Vercel on push to `main`:
+- ✅ Linting
+- ✅ Unit tests
+- ✅ Production build
+- ✅ Deployment to Vercel
+
+All tests must pass before deployment is triggered.
 
 ## Project Scope
 
