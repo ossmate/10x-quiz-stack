@@ -102,7 +102,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
 
       // Login successful - keep loading state until redirect completes
       // Don't call setIsLoading(false) here to prevent form from showing cleared state
-      window.location.href = redirectTo || "/dashboard";
+      // Always redirect to dashboard after login, unless there's a specific protected page to return to
+      const targetUrl = redirectTo && redirectTo !== "/" ? redirectTo : "/dashboard";
+      window.location.href = targetUrl;
     } catch {
       setFormError("Connection error. Please try again.");
       setIsLoading(false);

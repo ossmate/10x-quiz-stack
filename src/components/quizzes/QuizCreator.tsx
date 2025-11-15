@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { navigate } from "astro:transitions/client";
 import type { QuizDetailDTO, QuizUpdateDTO } from "../../types";
 import { EditableQuizContent } from "./EditableQuizContent";
 import type { QuizCreateInput } from "../../lib/validation/quiz-create.schema";
@@ -161,10 +160,8 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
       // Disable beforeunload warning before navigation
       setShouldPreventUnload(false);
 
-      // Navigate to quiz detail page using Astro's client-side navigation
-      setTimeout(() => {
-        navigate(`/quizzes/${createdQuiz.id}`);
-      }, 100);
+      // Navigate to quiz detail page - use window.location.href for reliability
+      window.location.href = `/quizzes/${createdQuiz.id}`;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create quiz. Please try again.";
       toast.error(errorMessage);
@@ -182,10 +179,8 @@ export function QuizCreator({ userId }: QuizCreatorProps) {
     // Disable beforeunload warning before navigation
     setShouldPreventUnload(false);
 
-    // Navigate after disabling the warning
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 100);
+    // Navigate to dashboard - use window.location.href for reliability
+    window.location.href = "/dashboard";
   };
 
   // Handle quiz changes from EditableQuizContent
