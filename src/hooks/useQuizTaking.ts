@@ -44,7 +44,7 @@ const uuidSchema = z.string().uuid();
  * Handles quiz loading, attempt creation, answer tracking, submission, and results
  */
 export function useQuizTaking(params: UseQuizTakingParams): UseQuizTakingReturn {
-  const { quizId, currentUserId: _currentUserId, isDemo = false } = params;
+  const { quizId, isDemo = false } = params;
 
   // Demo mode is when isDemo is true (regardless of authentication status)
   // Signed-in users can still take demo quizzes without creating attempts
