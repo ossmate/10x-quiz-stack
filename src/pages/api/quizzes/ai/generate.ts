@@ -59,7 +59,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(
         JSON.stringify({
           error: "Quota Limit Reached",
-          message: `You have reached your limit of ${quota.limit} AI-generated quizzes.`,
+          message: `You have reached your limit of ${quota.limit} AI quiz generation attempts.`,
           quota: quota,
         }),
         {
@@ -119,12 +119,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Step 5: Generate quiz content using AI service
     const command = aiQuizGeneratorService.createCommand(prompt);
     let aiGenerationResult;
+    let generationError: Error | null = null;
+    let tokensUsed = 0;
 
     try {
       aiGenerationResult = await aiQuizGeneratorService.generateQuizContent(command);
+      tokensUsed = aiGenerationResult.tokensUsed;
     } catch (error) {
-      // Handle AI generation error
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      generationError = error instanceof Error ? error : new Error("Unknown error");
+      // Extract tokens from error if available (attached by generator service)
+      tokensUsed = (generationError as Error & { tokensUsed?: number }).tokensUsed || 0;
+    }
+
+    // Step 6: Log AI usage if any tokens were consumed
+    // This must happen BEFORE returning any errors to ensure quota tracking
+    // Note: We log even for failed parsing because tokens were still consumed
+    if (tokensUsed > 0) {
+      try {
+        await aiQuizGeneratorService.logAIUsage(supabaseClient, userId, command.ai_model, tokensUsed);
+      } catch (logError) {
+        console.error("Failed to log AI usage:", logError);
+      }
+    }
+
+    // Step 7: Handle any generation errors after logging
+    if (generationError) {
+      const errorMessage = generationError.message;
 
       // Check for specific error types
       if (errorMessage.includes("OPENROUTER_API_KEY")) {
@@ -188,14 +208,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // Log AI usage (non-blocking)
-    aiQuizGeneratorService
-      .logAIUsage(supabaseClient, userId, command.ai_model, aiGenerationResult.tokensUsed)
-      .catch(() => {
-        // Silently handle non-critical logging errors
-      });
+    // Step 8: Create a quiz preview from the AI generated content
+    // At this point, we know aiGenerationResult is defined (no error occurred)
+    if (!aiGenerationResult) {
+      throw new Error("Generation result is unexpectedly undefined");
+    }
 
-    // Step 7: Create a quiz preview from the AI generated content
     const quizPreview: AIGeneratedQuizPreview = {
       title: aiGenerationResult.content.title,
       description: aiGenerationResult.content.description || "",
@@ -215,7 +233,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       })),
     };
 
-    // Step 8: Return quiz preview with 201 status
+    // Step 9: Return quiz preview with 201 status
     return new Response(JSON.stringify(quizPreview), {
       status: 201,
       headers: {
