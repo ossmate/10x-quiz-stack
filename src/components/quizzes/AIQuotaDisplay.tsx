@@ -7,11 +7,11 @@ import { Info, AlertTriangle } from "lucide-react";
  * Represents a user's AI quiz generation quota information
  */
 interface UserQuota {
-  /** Number of AI quizzes the user has generated */
+  /** Number of AI generation attempts the user has made */
   used: number;
-  /** Maximum number of AI quizzes the user can generate */
+  /** Maximum number of AI generation attempts the user can make */
   limit: number;
-  /** Number of remaining generations */
+  /** Number of remaining generation attempts */
   remaining: number;
   /** Whether the user has reached their generation limit */
   hasReachedLimit: boolean;
@@ -87,17 +87,17 @@ export function AIQuotaDisplay({ onQuotaLoaded }: { onQuotaLoaded?: (quota: User
       <AlertDescription>
         <div className="space-y-2">
           <p className="font-medium">
-            {quota.used} / {quota.limit} AI quiz generation{quota.limit !== 1 ? "s" : ""} used
+            {quota.used} / {quota.limit} AI generation attempt{quota.limit !== 1 ? "s" : ""} used
           </p>
           <Progress value={percentage} className="h-2" />
           {quota.hasReachedLimit ? (
             <p className="text-sm">
-              You&apos;ve reached your generation limit. To generate more quizzes, you can delete existing AI-generated
-              quizzes or check back later for more quota.
+              You&apos;ve reached your generation limit. Each generation attempt counts toward your quota, regardless of
+              whether you save the quiz or not.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              You have {quota.remaining} generation{quota.remaining !== 1 ? "s" : ""} remaining.
+              You have {quota.remaining} generation attempt{quota.remaining !== 1 ? "s" : ""} remaining.
             </p>
           )}
         </div>

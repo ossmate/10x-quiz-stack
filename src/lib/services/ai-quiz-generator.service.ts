@@ -57,7 +57,7 @@ export class AIQuizGeneratorService {
    *
    * @param command - Command containing prompt and AI configuration
    * @returns Promise with generated quiz content and usage metadata
-   * @throws Error if AI generation fails
+   * @throws Error with tokensUsed property if AI generation or parsing fails
    */
   async generateQuizContent(command: GenerateAIQuizCommand): Promise<AIQuizGenerationResult> {
     const { ai_model: model, ai_temperature: temperature, prompt } = command;
@@ -94,12 +94,20 @@ export class AIQuizGeneratorService {
     console.log("AI Response (last 200 chars):", content.substring(Math.max(0, content.length - 200)));
 
     // Step 4: Parse and validate AI-generated quiz
-    const validatedQuiz = parseAndValidateAIResponse(content);
+    // If parsing fails, attach token usage to error for quota tracking
+    try {
+      const validatedQuiz = parseAndValidateAIResponse(content);
 
-    return {
-      content: validatedQuiz,
-      tokensUsed: result.tokensUsed,
-    };
+      return {
+        content: validatedQuiz,
+        tokensUsed: result.tokensUsed,
+      };
+    } catch (error) {
+      // Attach tokens used to the error so it can be logged even on failure
+      const enhancedError = error instanceof Error ? error : new Error("Parsing failed");
+      (enhancedError as Error & { tokensUsed?: number }).tokensUsed = result.tokensUsed;
+      throw enhancedError;
+    }
   }
 
   /**

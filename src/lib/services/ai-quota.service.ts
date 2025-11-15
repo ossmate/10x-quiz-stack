@@ -7,11 +7,11 @@ type SupabaseClientType = SupabaseClient<Database>;
  * Represents a user's AI quiz generation quota information
  */
 export interface UserQuota {
-  /** Number of AI quizzes the user has generated */
+  /** Number of AI generation attempts the user has made */
   used: number;
-  /** Maximum number of AI quizzes the user can generate */
+  /** Maximum number of AI generation attempts the user can make */
   limit: number;
-  /** Number of remaining generations */
+  /** Number of remaining generation attempts */
   remaining: number;
   /** Whether the user has reached their generation limit */
   hasReachedLimit: boolean;
@@ -20,8 +20,9 @@ export interface UserQuota {
 /**
  * Service for managing AI quiz generation quotas
  *
- * This service tracks how many AI-generated quizzes a user has created
- * and enforces limits on generation to control costs and resource usage.
+ * This service tracks how many AI generation attempts a user has made
+ * (regardless of whether they saved the quiz) and enforces limits on
+ * generation to control costs and resource usage.
  */
 export class AIQuotaService {
   /**
@@ -35,14 +36,13 @@ export class AIQuotaService {
   async getUserQuota(supabase: SupabaseClientType, userId: string): Promise<UserQuota> {
     const limit = this.getQuotaLimit();
 
-    // Count AI-generated quizzes by querying metadata JSONB column
-    // Note: source is stored in metadata as: metadata->>'source' = 'ai_generated'
+    // Count AI generation attempts by querying ai_usage_logs table
+    // This counts actual generation attempts, not just saved quizzes
+    // This prevents users from generating unlimited quizzes without saving them
     const { count, error } = await supabase
-      .from("quizzes")
+      .from("ai_usage_logs")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .filter("metadata->>source", "eq", "ai_generated")
-      .is("deleted_at", null); // Exclude soft-deleted quizzes
+      .eq("user_id", userId);
 
     if (error) {
       throw new Error(`Failed to fetch user quota: ${error.message}`);
@@ -71,7 +71,7 @@ export class AIQuotaService {
   /**
    * Get quota limit from environment variable or use default
    *
-   * @returns The maximum number of AI quizzes a user can generate
+   * @returns The maximum number of AI generation attempts a user can make
    * @private
    */
   private getQuotaLimit(): number {
