@@ -14,6 +14,7 @@ Add the following secrets:
 |-------------|-------------|---------------|
 | `SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
 | `SUPABASE_KEY` | Your Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `OPENROUTER_API_KEY` | OpenRouter API key for AI features | `sk-or-v1-xxxxx...` |
 | `TEST_USER_EMAIL` | Test user email for E2E tests | `test@example.com` |
 | `TEST_USER_PASSWORD` | Test user password for E2E tests | `SecurePassword123!` |
 
@@ -49,6 +50,7 @@ Add the following secrets:
 # Set environment variables
 export SUPABASE_URL="your_supabase_url"
 export SUPABASE_KEY="your_supabase_key"
+export OPENROUTER_API_KEY="your_openrouter_key"
 export TEST_USER_EMAIL="test@example.com"
 export TEST_USER_PASSWORD="test_password"
 
@@ -70,6 +72,7 @@ npm run build
 ### E2E Tests Fail in CI
 
 - ✅ Verify `SUPABASE_URL` and `SUPABASE_KEY` are correct
+- ✅ Verify `OPENROUTER_API_KEY` is set (required for server to start)
 - ✅ Ensure test user exists and email is verified
 - ✅ Check if test user credentials match secrets
 - ✅ Review Playwright report artifacts for detailed error logs
