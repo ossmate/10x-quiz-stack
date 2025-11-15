@@ -164,9 +164,41 @@ See `playwright.config.ts` for configuration options:
 
 ## Continuous Integration
 
-Tests run automatically in CI/CD pipelines. Ensure all tests pass before merging:
+Tests run automatically in CI/CD pipelines via GitHub Actions:
+
+### CI Pipeline (`.github/workflows/ci.yml`)
+
+Runs on every push and pull request to `main`:
+
+- ✅ **Unit tests**: `npm run test:run`
+- ✅ **Coverage**: `npm run test:coverage`
+- ✅ **E2E tests**: `npm run test:e2e` (Playwright)
+- ✅ **Build**: `npm run build`
+- ✅ **Security audit**: `npm audit`
+
+### Required GitHub Secrets
+
+For E2E tests to run in CI, configure these secrets in your repository:
+
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_KEY` - Your Supabase anonymous key
+- `TEST_USER_EMAIL` - Test user email
+- `TEST_USER_PASSWORD` - Test user password
+
+See [.github/SECRETS_SETUP.md](.github/SECRETS_SETUP.md) for detailed setup instructions.
+
+### Running Tests Locally
 
 ```bash
-# Run all tests
+# Run all tests (unit + E2E)
 npm run test:run && npm run test:e2e
+
+# Run with coverage
+npm run test:coverage
 ```
+
+### Viewing Test Results
+
+- **Unit tests**: Results appear in terminal
+- **E2E tests**: HTML report generated in `playwright-report/`
+- **CI artifacts**: Download Playwright reports from GitHub Actions artifacts
