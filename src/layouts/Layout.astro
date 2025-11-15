@@ -9,7 +9,7 @@ interface Props {
   showHeader?: boolean;
 }
 
-const { title = "10x Astro Starter", showHeader = true } = Astro.props;
+const { title = "10x Quiz Stack", showHeader = true } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 // Get user from middleware (already validated!)
@@ -41,7 +41,7 @@ const initialUser = Astro.locals.user || null;
                   <div class="flex items-center">
                     <a href="/" class="flex items-center text-xl font-bold text-foreground">
                       <span class="text-primary">10x</span>
-                      <span class="ml-1">Quiz</span>
+                      <span class="ml-1">Quiz Stack</span>
                     </a>
                   </div>
 

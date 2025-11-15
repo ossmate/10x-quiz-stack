@@ -16,7 +16,7 @@ export function AuthContainer({ title, description, children, showLogo = true }:
           <div className="text-center mb-8">
             <a href="/" className="inline-flex items-center text-2xl font-bold text-foreground">
               <span className="text-primary">10x</span>
-              <span className="ml-1">Quiz</span>
+              <span className="ml-1">Quiz Stack</span>
             </a>
           </div>
         )}
